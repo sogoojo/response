@@ -1,401 +1,465 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Voice Q&A</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%;overflow:hidden}
-  body{
-    background:#0a0a0f;
-    color:#e8e6f0;
-    font-family:-apple-system,system-ui,sans-serif;
-    -webkit-tap-highlight-color:transparent;
-  }
-  #app{
-    max-width:600px;margin:0 auto;height:100%;
-    display:flex;flex-direction:column;position:relative;
-  }
-  .hdr{
-    padding:14px 20px;border-bottom:1px solid #2a2a3a;
-    display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
-  }
-  .hdr-left{display:flex;align-items:center;gap:10px}
-  .dot{width:9px;height:9px;border-radius:50%;background:#8a87a0;transition:all .3s}
-  .dot.on{background:#00e676;box-shadow:0 0 8px rgba(0,230,118,.25)}
-  .title{font-size:14px;font-weight:700;letter-spacing:1px}
-  .badge{font-size:11px;color:#6c5ce7;font-weight:600;margin-left:4px}
-  .hdr-right{display:flex;gap:8px}
-  .btn{
-    background:#1a1a24;color:#e8e6f0;border:1px solid #2a2a3a;border-radius:8px;
-    padding:6px 14px;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent;
-  }
-  .btn.active{background:#6c5ce7}
-  .btn.dim{color:#8a87a0}
-  .feed{flex:1;overflow-y:auto;padding:16px 16px 150px;-webkit-overflow-scrolling:touch}
-  .empty{text-align:center;color:#8a87a0;margin-top:20vh;padding:0 32px}
-  .empty-icon{font-size:40px;margin-bottom:16px}
-  .empty-title{font-size:16px;margin-bottom:6px}
-  .empty-sub{font-size:13px;line-height:1.5}
-  .qcard{
-    background:#1a1a24;border:1px solid #2a2a3a;border-left:3px solid #6c5ce7;
-    border-radius:12px;padding:14px 16px;margin-bottom:10px;transition:opacity .5s;
-  }
-  .qcard.fading{opacity:.35}
-  .qtext{font-size:13px;color:#6c5ce7;font-weight:600;margin-bottom:8px;line-height:1.4}
-  .thinking{color:#8a87a0;font-size:13px;font-style:italic}
-  .bullet{display:flex;align-items:flex-start;gap:8px;font-size:14px;line-height:1.4;margin-bottom:5px}
-  .arrow{color:#00e676;flex-shrink:0}
-  .tbar{
-    position:fixed;bottom:88px;left:50%;transform:translateX(-50%);
-    width:calc(100% - 32px);max-width:568px;background:#13131a;
-    border:1px solid #2a2a3a;border-radius:12px;padding:10px 14px;z-index:10;display:none;
-  }
-  .tbar.show{display:block}
-  .tbar-text{font-size:12px;color:#8a87a0;max-height:36px;overflow:hidden;line-height:1.4}
-  .tbar-interim{color:#6c5ce7;opacity:.7}
-  .mic-wrap{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:20}
-  .mic{
-    width:62px;height:62px;border-radius:50%;border:none;background:#6c5ce7;
-    box-shadow:0 0 20px rgba(108,92,231,.3),0 4px 12px rgba(0,0,0,.4);
-    cursor:pointer;display:flex;align-items:center;justify-content:center;
-    transition:all .2s;-webkit-tap-highlight-color:transparent;
-  }
-  .mic.on{background:#ff5252;box-shadow:0 0 20px rgba(255,82,82,.25),0 4px 12px rgba(0,0,0,.4)}
-  .mic svg{fill:white}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Voice Q&A</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%;overflow:hidden}
+        body{
+          background:#0a0a0f;color:#e8e6f0;
+          font-family:-apple-system,system-ui,sans-serif;
+          -webkit-tap-highlight-color:transparent;
+        }
+        #app{
+          max-width:600px;margin:0 auto;height:100%;
+          display:flex;flex-direction:column;position:relative;
+        }
+        .hdr{
+          padding:14px 20px;border-bottom:1px solid #2a2a3a;
+          display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+        }
+        .hdr-left{display:flex;align-items:center;gap:10px}
+        .dot{width:9px;height:9px;border-radius:50%;background:#8a87a0;transition:all .3s}
+        .dot.on{background:#00e676;box-shadow:0 0 8px rgba(0,230,118,.25)}
+        .title{font-size:14px;font-weight:700;letter-spacing:1px}
+        .badge{font-size:11px;color:#6c5ce7;font-weight:600;margin-left:4px}
+        .hdr-right{display:flex;gap:8px}
+        .btn{
+          background:#1a1a24;color:#e8e6f0;border:1px solid #2a2a3a;border-radius:8px;
+          padding:6px 14px;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+        }
+        .btn.active{background:#6c5ce7}
+        .btn.dim{color:#8a87a0}
+        .feed{flex:1;overflow-y:auto;padding:16px 16px 210px;-webkit-overflow-scrolling:touch}
+        .empty{text-align:center;color:#8a87a0;margin-top:18vh;padding:0 32px}
+        .empty-icon{font-size:40px;margin-bottom:16px}
+        .empty-title{font-size:16px;margin-bottom:6px}
+        .empty-sub{font-size:13px;line-height:1.5}
+        .qcard{
+          background:#1a1a24;border:1px solid #2a2a3a;border-left:3px solid #6c5ce7;
+          border-radius:12px;padding:14px 16px;margin-bottom:10px;transition:opacity .5s;
+        }
+        .qcard.fading{opacity:.35}
+        .qtext{font-size:13px;color:#6c5ce7;font-weight:600;margin-bottom:8px;line-height:1.4}
+        .thinking{color:#8a87a0;font-size:13px;font-style:italic}
+        .bullet{display:flex;align-items:flex-start;gap:8px;font-size:14px;line-height:1.4;margin-bottom:5px}
+        .arrow{color:#00e676;flex-shrink:0}
 
-  /* Settings overlay */
-  .overlay{
-    position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;
-    display:flex;align-items:center;justify-content:center;padding:24px;
-  }
-  .overlay.hidden{display:none}
-  .settings-card{
-    background:#13131a;border:1px solid #2a2a3a;border-radius:16px;
-    padding:28px 24px;width:100%;max-width:440px;
-  }
-  .settings-card h2{font-size:18px;margin-bottom:6px;font-weight:700}
-  .settings-card p{font-size:13px;color:#8a87a0;margin-bottom:20px;line-height:1.5}
-  .settings-card label{font-size:12px;color:#8a87a0;display:block;margin-bottom:6px;font-weight:600;letter-spacing:.5px}
-  .settings-card input{
-    width:100%;background:#0a0a0f;border:1px solid #2a2a3a;border-radius:8px;
-    padding:10px 12px;color:#e8e6f0;font-size:14px;margin-bottom:16px;
-    font-family:monospace;
-  }
-  .settings-card input:focus{outline:none;border-color:#6c5ce7}
-  .settings-card input::placeholder{color:#555}
-  .save-btn{
-    width:100%;background:#6c5ce7;color:white;border:none;border-radius:10px;
-    padding:12px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px;
-  }
-  .save-btn:disabled{opacity:.4;cursor:default}
-  .settings-err{color:#ff5252;font-size:12px;margin-bottom:12px;display:none}
-  .gear-btn{
-    background:none;border:none;color:#8a87a0;cursor:pointer;font-size:18px;
-    padding:4px 8px;-webkit-tap-highlight-color:transparent;
-  }
+        .tbox{
+          position:fixed;bottom:78px;left:50%;transform:translateX(-50%);
+          width:calc(100% - 24px);max-width:580px;
+          background:#13131a;border:1px solid #2a2a3a;border-radius:12px;
+          padding:12px 14px;z-index:10;display:none;
+          max-height:90px;overflow-y:auto;
+        }
+        .tbox.show{display:block}
+        .tbox-text{font-size:12px;color:#8a87a0;line-height:1.5;word-wrap:break-word}
+        .tbox-text .interim{color:#6c5ce7;opacity:.7}
+        .tbox-text .hit{color:#00e676}
 
-  ::-webkit-scrollbar{width:4px}
-  ::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:2px}
-</style>
+        .mic-wrap{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);z-index:20}
+        .mic{
+          width:56px;height:56px;border-radius:50%;border:none;background:#6c5ce7;
+          box-shadow:0 0 20px rgba(108,92,231,.3),0 4px 12px rgba(0,0,0,.4);
+          cursor:pointer;display:flex;align-items:center;justify-content:center;
+          transition:all .2s;-webkit-tap-highlight-color:transparent;
+        }
+        .mic.on{background:#ff5252;box-shadow:0 0 20px rgba(255,82,82,.25),0 4px 12px rgba(0,0,0,.4)}
+        .mic svg{fill:white}
+
+        .overlay{
+          position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;
+          display:flex;align-items:center;justify-content:center;padding:24px;
+        }
+        .overlay.hidden{display:none}
+        .scard{
+          background:#13131a;border:1px solid #2a2a3a;border-radius:16px;
+          padding:28px 24px;width:100%;max-width:440px;
+        }
+        .scard h2{font-size:18px;margin-bottom:6px;font-weight:700}
+        .scard p{font-size:13px;color:#8a87a0;margin-bottom:20px;line-height:1.5}
+        .scard label{font-size:12px;color:#8a87a0;display:block;margin-bottom:6px;font-weight:600;letter-spacing:.5px}
+        .scard input{
+          width:100%;background:#0a0a0f;border:1px solid #2a2a3a;border-radius:8px;
+          padding:10px 12px;color:#e8e6f0;font-size:14px;margin-bottom:16px;font-family:monospace;
+        }
+        .scard input:focus{outline:none;border-color:#6c5ce7}
+        .scard input::placeholder{color:#555}
+        .save-btn{
+          width:100%;background:#6c5ce7;color:white;border:none;border-radius:10px;
+          padding:12px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px;
+        }
+        .serr{color:#ff5252;font-size:12px;margin-bottom:12px;display:none}
+        .gear{background:none;border:none;color:#8a87a0;cursor:pointer;font-size:18px;padding:4px 8px}
+
+        ::-webkit-scrollbar{width:4px}
+        ::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:2px}
+    </style>
 </head>
 <body>
 <div id="app">
-  <div class="hdr">
-    <div class="hdr-left">
-      <div class="dot" id="dot"></div>
-      <span class="title">VOICE Q&A</span>
-      <span class="badge" id="pauseBadge" style="display:none">PAUSED</span>
+    <div class="hdr">
+        <div class="hdr-left">
+            <div class="dot" id="dot"></div>
+            <span class="title">VOICE Q&A</span>
+            <span class="badge" id="pauseBadge" style="display:none">PAUSED</span>
+        </div>
+        <div class="hdr-right">
+            <button class="btn" id="pauseBtn" style="display:none" onclick="togglePause()">Pause</button>
+            <button class="btn dim" onclick="clearAll()">Clear</button>
+            <button class="gear" onclick="showSettings()">⚙</button>
+        </div>
     </div>
-    <div class="hdr-right">
-      <button class="btn" id="pauseBtn" style="display:none" onclick="togglePause()">Pause</button>
-      <button class="btn dim" onclick="clearAll()">Clear</button>
-      <button class="gear-btn" onclick="showSettings()">⚙</button>
+
+    <div class="feed" id="feed">
+        <div class="empty" id="emptyState">
+            <div class="empty-icon">🎙</div>
+            <div class="empty-title">Tap mic to start</div>
+            <div class="empty-sub">Questions from speech get bullet-point answers</div>
+        </div>
     </div>
-  </div>
 
-  <div class="feed" id="feed">
-    <div class="empty" id="emptyState">
-      <div class="empty-icon">🎙</div>
-      <div class="empty-title">Tap mic to start</div>
-      <div class="empty-sub">Questions from speech get bullet-point answers</div>
+    <div class="tbox" id="tbox">
+        <div class="tbox-text" id="ttext"></div>
     </div>
-  </div>
 
-  <div class="tbar" id="tbar">
-    <div class="tbar-text" id="tbarText"></div>
-  </div>
-
-  <div class="mic-wrap">
-    <button class="mic" id="micBtn" onclick="toggleMic()">
-      <svg id="micIcon" width="22" height="22" viewBox="0 0 24 24">
-        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <line x1="12" y1="19" x2="12" y2="23" stroke="white" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    </button>
-  </div>
+    <div class="mic-wrap">
+        <button class="mic" id="micBtn" onclick="toggleMic()">
+            <svg id="micIcon" width="22" height="22" viewBox="0 0 24 24">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <line x1="12" y1="19" x2="12" y2="23" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </button>
+    </div>
 </div>
 
-<!-- Settings Overlay -->
 <div class="overlay" id="settingsOverlay">
-  <div class="settings-card">
-    <h2>Setup</h2>
-    <p>You need a Cloudflare Worker proxy (free) to call the Anthropic API from the browser. Deploy the worker.js file, then paste both values below.</p>
-    <label>WORKER URL</label>
-    <input type="url" id="workerUrl" placeholder="https://your-worker.your-name.workers.dev" spellcheck="false">
-    <label>ANTHROPIC API KEY</label>
-    <input type="password" id="apiKey" placeholder="sk-ant-..." spellcheck="false">
-    <div class="settings-err" id="settingsErr"></div>
-    <button class="save-btn" id="saveBtn" onclick="saveSettings()">Save & Start</button>
-  </div>
+    <div class="scard">
+        <h2>Setup</h2>
+        <p>Deploy worker.js to Cloudflare Workers (free), then paste both values below.</p>
+        <label>WORKER URL</label>
+        <input type="url" id="workerUrl" placeholder="https://your-worker.workers.dev" spellcheck="false">
+        <label>ANTHROPIC API KEY</label>
+        <input type="password" id="apiKey" placeholder="sk-ant-..." spellcheck="false">
+        <div class="serr" id="settingsErr"></div>
+        <button class="save-btn" onclick="saveSettings()">Save & Start</button>
+    </div>
 </div>
 
 <script>
-// --- STATE ---
-let listening = false, paused = false, recognition = null;
-let transcript = "", context = "", monoCount = 0, cooldown = false;
-let questions = [];
-let WORKER_URL = "", API_KEY = "";
+    // ============ STATE ============
+    let listening = false, paused = false, recognition = null;
+    let fullTranscript = "", context = "", monoCount = 0, cooldown = false;
+    let questions = [];
+    let WORKER_URL = "", API_KEY = "";
 
-// Load saved settings
-try {
-  WORKER_URL = localStorage.getItem("vqa_worker") || "";
-  API_KEY = localStorage.getItem("vqa_key") || "";
-} catch(e){}
+    try { WORKER_URL = localStorage.getItem("vqa_worker")||""; API_KEY = localStorage.getItem("vqa_key")||""; } catch(e){}
+    if (!WORKER_URL||!API_KEY) document.getElementById("settingsOverlay").classList.remove("hidden");
+    else document.getElementById("settingsOverlay").classList.add("hidden");
+    document.getElementById("workerUrl").value = WORKER_URL;
+    document.getElementById("apiKey").value = API_KEY;
 
-// Show settings if not configured
-if (!WORKER_URL || !API_KEY) {
-  document.getElementById("settingsOverlay").classList.remove("hidden");
-} else {
-  document.getElementById("settingsOverlay").classList.add("hidden");
-}
-document.getElementById("workerUrl").value = WORKER_URL;
-document.getElementById("apiKey").value = API_KEY;
-
-function showSettings() {
-  document.getElementById("settingsOverlay").classList.remove("hidden");
-  document.getElementById("workerUrl").value = WORKER_URL;
-  document.getElementById("apiKey").value = API_KEY;
-}
-
-function saveSettings() {
-  const w = document.getElementById("workerUrl").value.trim().replace(/\/$/,"");
-  const k = document.getElementById("apiKey").value.trim();
-  const err = document.getElementById("settingsErr");
-  if (!w || !k) { err.style.display="block"; err.textContent="Both fields required"; return; }
-  if (!w.startsWith("https://")) { err.style.display="block"; err.textContent="Worker URL must start with https://"; return; }
-  WORKER_URL = w; API_KEY = k;
-  try { localStorage.setItem("vqa_worker", w); localStorage.setItem("vqa_key", k); } catch(e){}
-  err.style.display="none";
-  document.getElementById("settingsOverlay").classList.add("hidden");
-}
-
-// --- RHETORICAL SKIP ---
-const RHETORICAL = [
-  /^\s*right\s*\??$/i, /^\s*you know\s*\??$/i,
-  /^\s*(does that |that )?make(s)? sense\s*\??$/i,
-  /^\s*okay\s*\??$/i, /^\s*yeah\s*\??$/i, /^\s*no\s*\??$/i,
-  /^\s*really\s*\??$/i, /^\s*isn'?t it\s*\??$/i,
-  /^\s*so\s*\??$/i, /^\s*huh\s*\??$/i, /^\s*oh really\s*\??$/i,
-  /^\s*you see\s*\??$/i, /^\s*got it\s*\??$/i,
-  /^\s*fair enough\s*\??$/i, /^\s*am I right\s*\??$/i,
-  /^\s*wouldn'?t you say\s*\??$/i, /^\s*see what I mean\s*\??$/i,
-];
-const Q_START = /^(who|what|where|when|why|how|is|are|was|were|do|does|did|can|could|would|should|will|shall|has|have|had|which|whom|tell me|describe|explain|give me|walk me)\b/i;
-
-function isRealQuestion(t) {
-  t = t.trim();
-  if (t.split(/\s+/).length < 4) return false;
-  if (RHETORICAL.some(r => r.test(t))) return false;
-  if (t.endsWith("?")) return true;
-  if (Q_START.test(t)) return true;
-  return false;
-}
-
-// --- DOM ---
-const $feed = document.getElementById("feed");
-const $dot = document.getElementById("dot");
-const $micBtn = document.getElementById("micBtn");
-const $micIcon = document.getElementById("micIcon");
-const $tbar = document.getElementById("tbar");
-const $tbarText = document.getElementById("tbarText");
-const $empty = document.getElementById("emptyState");
-const $pauseBtn = document.getElementById("pauseBtn");
-const $pauseBadge = document.getElementById("pauseBadge");
-
-const MIC_SVG = `<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="23" stroke="white" stroke-width="2" stroke-linecap="round"/>`;
-const STOP_SVG = `<rect x="6" y="6" width="12" height="12" rx="2" fill="white"/>`;
-
-// --- SPEECH ---
-function initRecognition() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    $feed.innerHTML = `<div class="empty"><div class="empty-icon">🎤</div><div class="empty-title">Not supported</div><div class="empty-sub">Use Chrome on iPad or desktop</div></div>`;
-    return null;
-  }
-  const rec = new SR();
-  rec.continuous = true;
-  rec.interimResults = true;
-  rec.lang = "en-US";
-
-  rec.onresult = function(e) {
-    let iT = "", fT = "";
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const txt = e.results[i][0].transcript;
-      if (e.results[i].isFinal) fT += txt + " ";
-      else iT += txt;
+    function showSettings(){
+      document.getElementById("settingsOverlay").classList.remove("hidden");
+      document.getElementById("workerUrl").value=WORKER_URL;
+      document.getElementById("apiKey").value=API_KEY;
     }
-    if (iT || fT.trim()) {
-      $tbar.classList.add("show");
-      $tbarText.innerHTML = escHtml((transcript + " " + fT).slice(-100)) +
-        (iT ? '<span class="tbar-interim"> ' + escHtml(iT) + '</span>' : '');
+    function saveSettings(){
+      const w=document.getElementById("workerUrl").value.trim().replace(/\/$/,"");
+      const k=document.getElementById("apiKey").value.trim();
+      const err=document.getElementById("settingsErr");
+      if(!w||!k){err.style.display="block";err.textContent="Both fields required";return}
+      if(!w.startsWith("https://")){err.style.display="block";err.textContent="Worker URL must start with https://";return}
+      WORKER_URL=w;API_KEY=k;
+      try{localStorage.setItem("vqa_worker",w);localStorage.setItem("vqa_key",k)}catch(e){}
+      err.style.display="none";
+      document.getElementById("settingsOverlay").classList.add("hidden");
     }
-    if (!fT.trim()) return;
-    const chunk = fT.trim();
-    transcript += " " + chunk;
-    context = transcript.slice(-800);
-    monoCount += chunk.split(/\s+/).length;
 
-    const sentences = chunk.split(/(?<=[.?!])\s+|(?<=\?)/g).map(s => s.trim()).filter(Boolean);
-    for (const s of sentences) {
-      if (!paused && !cooldown && isRealQuestion(s) && monoCount < 60) {
-        cooldown = true;
-        setTimeout(() => { cooldown = false; }, 3000);
-        addQuestion(s);
-        monoCount = 0;
+    // ============ QUESTION DETECTION ============
+
+    // Filler / rhetorical — always skip
+    const SKIP = new Set([
+      "right","you know","does that make sense","make sense","makes sense",
+      "okay","yeah","no","really","isn't it","so","huh","oh really",
+      "you see","got it","fair enough","am i right","correct","sure",
+      "wouldn't you say","see what i mean","know what i mean",
+      "you know what i mean","isn't that right","don't you think",
+    ]);
+
+    // Question starters — matched against beginning of utterance
+    // Sorted longest-first so multi-word patterns match before single words
+    const Q_STARTERS = [
+      "what do you think about","what do you think of","what do you mean by",
+      "how do you feel about","how would you describe","how would you handle",
+      "can you tell me about","can you tell me","can you explain",
+      "could you tell me","could you explain","could you describe",
+      "would you say","would you recommend","would you mind",
+      "do you know about","do you know how","do you know what","do you know",
+      "have you ever","have you heard","have you seen","have you tried",
+      "what is the best","what is the difference","what are the",
+      "what is your","what are your","what was the","what were the",
+      "how do i","how do you","how do we","how does it","how does the",
+      "how did you","how did the","how can i","how can we","how can you",
+      "how could i","how could we","how would i","how would you",
+      "how is the","how is it","how are the","how are you",
+      "how was the","how was it","how long does","how long did",
+      "how many","how much","how often","how far",
+      "where do i","where do you","where does","where did",
+      "where is the","where is it","where are the","where can i",
+      "when do i","when do you","when does","when did",
+      "when is the","when is it","when are","when was","when will",
+      "why do i","why do you","why does","why did",
+      "why is the","why is it","why are","why was","why would",
+      "who is the","who is it","who are the","who are you",
+      "who was the","who did","who does","who can","who will",
+      "is there a","is there any","is it possible","is it true",
+      "is this the","is that the","is that a","is it a",
+      "are there any","are there","are you","are we","are they",
+      "was there","was it","was that","were there","were you",
+      "did you","did the","did it","did we","did they",
+      "does it","does the","does this","does that",
+      "do you","do we","do they","do i",
+      "can i","can you","can we","can they",
+      "could i","could you","could we",
+      "should i","should you","should we","should the",
+      "will it","will the","will you","will we",
+      "would it","would you","would the",
+      "has it","has the","has anyone","has there",
+      "have you","have we","have they",
+      "tell me about","tell me how","tell me what","tell me why","tell me",
+      "explain how","explain what","explain why","explain the","explain",
+      "describe how","describe what","describe the","describe your","describe",
+      "walk me through","talk me through","give me an example",
+      "what's the","what's your","what's a","what's it","what's",
+      "who's the","who's","where's the","where's","when's","how's the","how's",
+      "how to","what about","what if","what else",
+      "who","what","where","when","why","how",
+      "is","are","was","were","do","does","did",
+      "can","could","would","should","will","shall",
+      "has","have","had","which","whom",
+    ];
+
+    function isRealQuestion(text) {
+      const raw = text.trim();
+      const t = raw.toLowerCase().replace(/[?.!,;:]+$/g, "").trim();
+      const words = t.split(/\s+/);
+
+      // Too short
+      if (words.length < 3) return false;
+
+      // Skip rhetorical
+      if (SKIP.has(t)) return false;
+
+      // Has explicit question mark
+      if (raw.endsWith("?")) return true;
+
+      // Match against starters (longest first already sorted)
+      for (const starter of Q_STARTERS) {
+        if (t.startsWith(starter + " ") || t === starter) return true;
       }
+
+      return false;
     }
-  };
 
-  rec.onerror = function(e) {
-    if (e.error === "not-allowed") {
-      $feed.innerHTML = `<div class="empty"><div class="empty-icon">🎤</div><div class="empty-title">Mic access needed</div><div class="empty-sub">Enable microphone in Chrome settings and reload</div></div>`;
-      listening = false; updateUI(); return;
-    }
-    if (listening) setTimeout(() => { try { rec.start(); } catch(_){} }, 500);
-  };
-  rec.onend = function() {
-    if (listening) setTimeout(() => { try { rec.start(); } catch(_){} }, 200);
-  };
-  return rec;
-}
+    // ============ DOM ============
+    const $feed=document.getElementById("feed");
+    const $dot=document.getElementById("dot");
+    const $micBtn=document.getElementById("micBtn");
+    const $micIcon=document.getElementById("micIcon");
+    const $tbox=document.getElementById("tbox");
+    const $ttext=document.getElementById("ttext");
+    const $empty=document.getElementById("emptyState");
+    const $pauseBtn=document.getElementById("pauseBtn");
+    const $pauseBadge=document.getElementById("pauseBadge");
 
-// --- QUESTIONS ---
-function addQuestion(text) {
-  const id = Date.now() + "_" + Math.random().toString(36).slice(2);
-  const q = { id, question: text, bullets: [], loading: true, time: Date.now() };
-  questions.push(q);
-  if (questions.length > 5) questions = questions.slice(-5);
-  renderQuestions();
-  fetchBullets(q);
-}
+    const MIC_SVG=`<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="23" stroke="white" stroke-width="2" stroke-linecap="round"/>`;
+    const STOP_SVG=`<rect x="6" y="6" width="12" height="12" rx="2" fill="white"/>`;
 
-async function fetchBullets(q) {
-  if (!WORKER_URL || !API_KEY) {
-    q.bullets = ["⚙ Configure Worker URL and API key in settings"];
-    q.loading = false; renderQuestions(); return;
-  }
-  try {
-    const res = await fetch(WORKER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
-        messages: [{
-          role: "user",
-          content: `You are a real-time voice assistant. A question was detected from live audio. Give 3-5 SHORT bullet points (max 10 words each) as talking points. No preamble. Just bullets starting with •.
-
-Question: "${q.question}"
-${context ? '\nRecent context:\n"' + context.slice(-400) + '"' : ''}`
-        }]
-      })
-    });
-    const data = await res.json();
-    if (data.error) { q.bullets = [data.error.message || "API error"]; }
-    else {
-      const text = (data.content || []).map(c => c.text || "").join("\n");
-      q.bullets = text.split("\n")
-        .map(l => l.trim()).filter(l => /^[•\-*→]/.test(l))
-        .map(l => l.replace(/^[•\-*→]\s*/, "").trim())
-        .filter(Boolean).slice(0, 5);
-      if (!q.bullets.length) q.bullets = ["No answer generated"];
-    }
-  } catch(e) {
-    q.bullets = ["Network error — check worker URL"];
-  }
-  q.loading = false;
-  renderQuestions();
-}
-
-function renderQuestions() {
-  const now = Date.now();
-  questions = questions.filter(q => now - q.time < 60000);
-  $empty.style.display = (questions.length === 0 && !listening) ? "block" : "none";
-  let html = "";
-  if (questions.length === 0 && listening) {
-    html = '<div style="text-align:center;color:#8a87a0;margin-top:28vh;font-size:14px">Listening... waiting for questions</div>';
-  }
-  for (const q of questions) {
-    const fading = (now - q.time) / 1000 > 45;
-    html += `<div class="qcard${fading ? ' fading' : ''}">`;
-    html += `<div class="qtext">${escHtml(q.question)}</div>`;
-    if (q.loading) {
-      html += `<div class="thinking">thinking...</div>`;
-    } else {
-      for (const b of q.bullets) {
-        html += `<div class="bullet"><span class="arrow">→</span><span>${escHtml(b)}</span></div>`;
+    // ============ SPEECH ============
+    function initRecognition(){
+      const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+      if(!SR){
+        $feed.innerHTML=`<div class="empty"><div class="empty-icon">🎤</div><div class="empty-title">Not supported</div><div class="empty-sub">Use Chrome on iPad or desktop</div></div>`;
+        return null;
       }
+      const rec=new SR();
+      rec.continuous=true;
+      rec.interimResults=true;
+      rec.lang="en-US";
+
+      rec.onresult=function(e){
+        let interimText="",finalText="";
+        for(let i=e.resultIndex;i<e.results.length;i++){
+          const t=e.results[i][0].transcript;
+          if(e.results[i].isFinal) finalText+=t+" ";
+          else interimText+=t;
+        }
+
+        // Update live transcript
+        $tbox.classList.add("show");
+        $ttext.innerHTML=escHtml(fullTranscript.slice(-180)+" "+finalText)+
+          (interimText?'<span class="interim"> '+escHtml(interimText)+'</span>':'');
+        $tbox.scrollTop=$tbox.scrollHeight;
+
+        if(!finalText.trim()) return;
+
+        const chunk=finalText.trim();
+        fullTranscript+=" "+chunk;
+        context=fullTranscript.slice(-800);
+        monoCount+=chunk.split(/\s+/).length;
+
+        // Log to console for debugging
+        console.log("[VOICE]",chunk,"| isQ:",isRealQuestion(chunk));
+
+        // Check the whole final chunk as one unit
+        // Speech API natural pauses = sentence boundaries
+        if(!paused && !cooldown && isRealQuestion(chunk)){
+          // Skip if deep in a monologue (>80 words without pause)
+          if(monoCount<80){
+            cooldown=true;
+            setTimeout(()=>{cooldown=false},3000);
+            addQuestion(chunk);
+            monoCount=0;
+
+            // Highlight in transcript
+            $ttext.innerHTML=escHtml(fullTranscript.slice(-180).replace(chunk,""))+
+              '<span class="hit">'+escHtml(chunk)+'</span>';
+          }
+        }
+      };
+
+      rec.onerror=function(e){
+        console.log("[VOICE ERR]",e.error);
+        if(e.error==="not-allowed"){
+          $feed.innerHTML=`<div class="empty"><div class="empty-icon">🎤</div><div class="empty-title">Mic access needed</div><div class="empty-sub">Enable microphone in Chrome settings and reload</div></div>`;
+          listening=false;updateUI();return;
+        }
+        if(listening) setTimeout(()=>{try{rec.start()}catch(_){}},500);
+      };
+
+      rec.onend=function(){
+        if(listening) setTimeout(()=>{try{rec.start()}catch(_){}},200);
+      };
+
+      return rec;
     }
-    html += `</div>`;
-  }
-  $feed.innerHTML = html;
-  $feed.scrollTop = $feed.scrollHeight;
-}
 
-// --- CONTROLS ---
-function toggleMic() {
-  if (!WORKER_URL || !API_KEY) { showSettings(); return; }
-  if (listening) {
-    listening = false;
-    if (recognition) { recognition.onend = null; recognition.stop(); recognition = null; }
-    $tbar.classList.remove("show");
-  } else {
-    recognition = initRecognition();
-    if (recognition) { listening = true; monoCount = 0; try { recognition.start(); } catch(_){} }
-  }
-  updateUI(); renderQuestions();
-}
+    // ============ QUESTIONS ============
+    function addQuestion(text){
+      const id=Date.now()+"_"+Math.random().toString(36).slice(2);
+      const q={id,question:text,bullets:[],loading:true,time:Date.now()};
+      questions.push(q);
+      if(questions.length>6) questions=questions.slice(-6);
+      renderQuestions();
+      fetchBullets(q);
+    }
 
-function togglePause() { paused = !paused; updateUI(); }
+    async function fetchBullets(q){
+      if(!WORKER_URL||!API_KEY){
+        q.bullets=["Configure Worker URL and API key in ⚙ settings"];
+        q.loading=false;renderQuestions();return;
+      }
+      try{
+        const res=await fetch(WORKER_URL,{
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json",
+            "x-api-key":API_KEY,
+            "anthropic-version":"2023-06-01",
+          },
+          body:JSON.stringify({
+            model:"claude-sonnet-4-20250514",
+            max_tokens:1000,
+            messages:[{
+              role:"user",
+              content:`You are a real-time voice assistant helping someone in a live conversation. A question was just detected. Give 3-5 SHORT bullet points (max 10 words each) as concise talking points or likely answers. No preamble, no explanation. Just bullets starting with •.
 
-function clearAll() {
-  transcript = ""; context = ""; questions = []; monoCount = 0;
-  $tbar.classList.remove("show"); $tbarText.innerHTML = "";
-  renderQuestions();
-}
+    Question: "${q.question}"
+    ${context?'\nRecent conversation context:\n"'+context.slice(-400)+'"':''}`
+            }]
+          })
+        });
+        const data=await res.json();
+        if(data.error){
+          q.bullets=[data.error.message||"API error"];
+        } else {
+          const text=(data.content||[]).map(c=>c.text||"").join("\n");
+          q.bullets=text.split("\n")
+            .map(l=>l.trim()).filter(l=>/^[•\-*→]/.test(l))
+            .map(l=>l.replace(/^[•\-*→]\s*/,"").trim())
+            .filter(Boolean).slice(0,5);
+          if(!q.bullets.length) q.bullets=["No answer generated"];
+        }
+      }catch(e){
+        q.bullets=["Network error — check worker URL"];
+      }
+      q.loading=false;
+      renderQuestions();
+    }
 
-function updateUI() {
-  $dot.className = listening ? "dot on" : "dot";
-  $micBtn.className = listening ? "mic on" : "mic";
-  $micIcon.innerHTML = listening ? STOP_SVG : MIC_SVG;
-  $pauseBtn.style.display = listening ? "inline-block" : "none";
-  $pauseBtn.className = paused ? "btn active" : "btn";
-  $pauseBtn.textContent = paused ? "Resume" : "Pause";
-  $pauseBadge.style.display = paused ? "inline" : "none";
-}
+    function renderQuestions(){
+      const now=Date.now();
+      questions=questions.filter(q=>now-q.time<90000);
+      $empty.style.display=(questions.length===0&&!listening)?"block":"none";
+      let html="";
+      if(questions.length===0&&listening){
+        html='<div style="text-align:center;color:#8a87a0;margin-top:25vh;font-size:14px">Listening... speak a question</div>';
+      }
+      for(const q of questions){
+        const fading=(now-q.time)/1000>60;
+        html+=`<div class="qcard${fading?' fading':''}">`;
+        html+=`<div class="qtext">${escHtml(q.question)}</div>`;
+        if(q.loading){
+          html+=`<div class="thinking">thinking...</div>`;
+        }else{
+          for(const b of q.bullets){
+            html+=`<div class="bullet"><span class="arrow">→</span><span>${escHtml(b)}</span></div>`;
+          }
+        }
+        html+=`</div>`;
+      }
+      $feed.innerHTML=html;
+      $feed.scrollTop=$feed.scrollHeight;
+    }
 
-function escHtml(s) {
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
+    // ============ CONTROLS ============
+    function toggleMic(){
+      if(!WORKER_URL||!API_KEY){showSettings();return}
+      if(listening){
+        listening=false;
+        if(recognition){recognition.onend=null;recognition.stop();recognition=null}
+        $tbox.classList.remove("show");
+      }else{
+        recognition=initRecognition();
+        if(recognition){listening=true;monoCount=0;try{recognition.start()}catch(_){}}
+      }
+      updateUI();renderQuestions();
+    }
+    function togglePause(){paused=!paused;updateUI()}
+    function clearAll(){
+      fullTranscript="";context="";questions=[];monoCount=0;
+      $tbox.classList.remove("show");$ttext.innerHTML="";
+      renderQuestions();
+    }
+    function updateUI(){
+      $dot.className=listening?"dot on":"dot";
+      $micBtn.className=listening?"mic on":"mic";
+      $micIcon.innerHTML=listening?STOP_SVG:MIC_SVG;
+      $pauseBtn.style.display=listening?"inline-block":"none";
+      $pauseBtn.className=paused?"btn active":"btn";
+      $pauseBtn.textContent=paused?"Resume":"Pause";
+      $pauseBadge.style.display=paused?"inline":"none";
+    }
+    function escHtml(s){
+      return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
 
-setInterval(() => { if (questions.length) renderQuestions(); }, 5000);
+    // Auto cleanup
+    setInterval(()=>{if(questions.length)renderQuestions()},5000);
 </script>
 </body>
 </html>
