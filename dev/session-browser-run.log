@@ -1,0 +1,21 @@
+
+  Voice Q&A — Interview Coach
+  http://localhost:3000
+
+  System Design: http://localhost:3000/
+  Coding:        http://localhost:3000/coding.html
+  Behavioral:    http://localhost:3000/behavioral.html
+
+  /api/analyze             — system design detection
+  /api/answer              — system design answers
+  /api/coding/analyze      — coding problem detection
+  /api/coding/answer       — coding answers
+  /api/behavioral/analyze  — behavioral question detection
+  /api/behavioral/data     — behavioral story bank
+  /api/state               — view conversation state
+  /api/reset               — reset state
+  /ws/deepgram             — Deepgram speech WebSocket ✓
+
+  HTTPS (for mobile): https://localhost:3443
+  iPad/mobile:        https://192.168.68.64:3443/behavioral.html?speech=deepgram
+

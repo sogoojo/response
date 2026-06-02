@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Behavioral Interview — Prep & Live</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#0a0a0f;color:#e8e6f0;font-family:-apple-system,system-ui,sans-serif}
+
+        .prep-view,.live-view{display:none}
+        .prep-view.active,.live-view.active{display:flex;flex-direction:column;height:100vh}
+
+        /* ===== PREP MODE ===== */
+        .prep-hdr{
+          padding:16px 24px;border-bottom:1px solid #2a2a3a;
+          display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+        }
+        .prep-hdr-left{display:flex;align-items:center;gap:12px}
+        .prep-title{font-size:15px;font-weight:700;letter-spacing:1px;color:#e6a23c}
+        .prep-sub{font-size:12px;color:#8a87a0}
+        .prep-progress{
+          font-size:12px;color:#e6a23c;background:rgba(230,162,60,.1);
+          border:1px solid rgba(230,162,60,.3);border-radius:6px;padding:4px 12px;
+        }
+        .start-btn{
+          background:#e6a23c;color:#0a0a0f;border:none;border-radius:8px;
+          padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;
+          letter-spacing:.5px;transition:all .2s;
+        }
+        .start-btn:hover{background:#f0b04e}
+        .start-btn:disabled{opacity:.4;cursor:not-allowed}
+
+        .domain-tabs{
+          display:flex;gap:0;border-bottom:1px solid #2a2a3a;flex-shrink:0;
+        }
+        .domain-tab{
+          flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;
+          color:#8a87a0;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;
+        }
+        .domain-tab.active{color:#e6a23c;border-bottom-color:#e6a23c}
+        .domain-tab:hover{color:#e8e6f0}
+        .domain-tab .count{
+          font-size:10px;color:#555;margin-left:4px;
+        }
+
+        .prep-body{flex:1;overflow-y:auto;padding:20px 24px 100px}
+
+        .cat-section{margin-bottom:28px}
+        .cat-title{
+          font-size:13px;font-weight:700;letter-spacing:1.5px;color:#e6a23c;
+          margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(230,162,60,.2);
+        }
+        .qt-row{
+          background:#1a1a24;border:1px solid #2a2a3a;border-radius:10px;
+          padding:14px 16px;margin-bottom:8px;transition:all .2s;
+        }
+        .qt-row.assigned{border-color:rgba(230,162,60,.3);background:#1e1c24}
+        .qt-row-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+        .qt-name{font-size:14px;font-weight:600}
+        .qt-signals{display:flex;gap:4px;flex-wrap:wrap}
+        .signal-tag{
+          font-size:9px;color:#8a87a0;background:rgba(138,135,160,.1);
+          border:1px solid rgba(138,135,160,.2);border-radius:3px;padding:1px 6px;
+        }
+        .qt-stories{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+        .story-chip{
+          font-size:12px;color:#8a87a0;background:#12121a;
+          border:1px solid #2a2a3a;border-radius:6px;padding:5px 10px;
+          cursor:pointer;transition:all .2s;max-width:260px;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+        }
+        .story-chip:hover{border-color:#e6a23c;color:#e8e6f0}
+        .story-chip.selected{
+          color:#e6a23c;border-color:#e6a23c;background:rgba(230,162,60,.08);
+        }
+        .no-stories{font-size:11px;color:#555;font-style:italic;margin-top:4px}
+
+        /* ===== LIVE MODE ===== */
+        .live-view{display:none}
+        .live-view.active{display:flex}
+
+        .layout{display:flex;height:100vh;width:100%}
+        .app-panel{flex:1;display:flex;flex-direction:column;min-width:0}
+
+        .live-hdr{
+          padding:14px 20px;border-bottom:1px solid #2a2a3a;
+          display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+        }
+        .live-hdr-left{display:flex;align-items:center;gap:10px}
+        .dot{width:9px;height:9px;border-radius:50%;background:#8a87a0;transition:all .3s}
+        .dot.on{background:#00e676;box-shadow:0 0 8px rgba(0,230,118,.25)}
+        .dot.thinking{background:#ff9800;box-shadow:0 0 8px rgba(255,152,0,.25);animation:pulse 1s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+        .live-title{font-size:14px;font-weight:700;letter-spacing:1px;color:#e6a23c}
+        .live-domain{font-size:11px;color:#8a87a0;margin-left:8px}
+        .live-status{font-size:11px;color:#8a87a0;margin-left:8px}
+        .btn{
+          background:#1a1a24;color:#e8e6f0;border:1px solid #2a2a3a;border-radius:8px;
+          padding:6px 14px;font-size:13px;cursor:pointer;
+        }
+        .btn:hover{border-color:#e6a23c}
+
+        .feed{flex:1;overflow-y:auto;padding:16px}
+        .empty{text-align:center;color:#8a87a0;margin-top:15vh;padding:0 32px}
+        .empty-icon{font-size:40px;margin-bottom:16px}
+        .empty-title{font-size:16px;margin-bottom:6px}
+        .empty-sub{font-size:13px;line-height:1.5}
+
+        .carl-card{
+          background:#1a1a24;border:1px solid #2a2a3a;border-left:4px solid #e6a23c;
+          border-radius:12px;padding:18px 20px;margin-bottom:12px;transition:all .3s;
+        }
+        .carl-card.latest{
+          border-color:#e6a23c;background:#1e1c24;
+          box-shadow:0 0 20px rgba(230,162,60,.12);
+        }
+        .carl-card.collapsed{
+          padding:10px 16px;cursor:pointer;opacity:.5;
+        }
+        .carl-card.collapsed .carl-body,
+        .carl-card.collapsed .carl-probes,
+        .carl-card.collapsed .carl-signals,
+        .carl-card.collapsed .timestamp{display:none}
+        .carl-card.collapsed .carl-title{
+          font-size:13px;margin-bottom:0;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+        }
+
+        .carl-label{
+          font-size:11px;font-weight:700;letter-spacing:1px;color:#e6a23c;margin-bottom:4px;
+        }
+        .answer-hint{font-size:13px;color:#ffd700;margin:6px 0 8px;font-style:italic;line-height:1.4;padding:4px 8px;background:rgba(255,215,0,0.08);border-radius:4px;border-left:3px solid #ffd700}
+        .carl-qt{font-size:11px;color:#8a87a0;margin-bottom:8px}
+        .carl-title{font-size:17px;color:#e8e6f0;font-weight:600;margin-bottom:14px;line-height:1.4}
+        .carl-signals{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
+
+        .carl-body{font-size:14px;line-height:1.7;color:#d0cfe0}
+        .carl-section{margin-bottom:12px}
+        .carl-section-label{
+          font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:4px;
+        }
+        .carl-section-label.ctx{color:#03a9f4}
+        .carl-section-label.act{color:#e6a23c}
+        .carl-section-label.res{color:#00e676}
+        .carl-section-label.lrn{color:#6c5ce7}
+        .carl-context{color:#b0aec0;font-size:14px;line-height:1.6}
+        .carl-actions{list-style:none;padding:0}
+        .carl-actions li{
+          padding:4px 0 4px 12px;position:relative;font-size:14px;line-height:1.5;
+        }
+        .carl-actions li::before{
+          content:"";position:absolute;left:0;top:11px;
+          width:5px;height:5px;border-radius:50%;background:#e6a23c;
+        }
+        .carl-result{color:#b0aec0;font-size:14px;line-height:1.6}
+        .carl-learning{color:#a09ec0;font-size:13px;font-style:italic;line-height:1.5}
+
+        .carl-probes{
+          margin-top:14px;padding-top:12px;border-top:1px solid #2a2a3a;
+        }
+        .carl-probes-title{font-size:10px;font-weight:700;letter-spacing:1px;color:#8a87a0;margin-bottom:8px}
+        .probe-item{margin-bottom:8px}
+        .probe-q{font-size:12px;color:#e6a23c;font-weight:600;margin-bottom:2px}
+        .probe-a{font-size:12px;color:#8a87a0;line-height:1.5}
+        .timestamp{font-size:10px;color:#555;margin-top:10px}
+
+        .coach-bar{display:flex;align-items:center;gap:8px;padding:6px 16px;background:#1a1a2e;border-top:1px solid #2a2a3a;flex-shrink:0;font-size:12px}
+        .coach-key{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:#2a2a3a;border:1px solid #3a3a4a;border-radius:4px;color:#8a87a0;font-weight:700;font-size:11px;font-family:monospace}
+        .coach-key.active{background:#ffd700;color:#000;border-color:#ffd700}
+        .coach-label{color:#666;margin-right:12px}
+        .coach-bar.flash{background:#1a1a3e}
+
+        .transcript-bar{
+          border-top:1px solid #2a2a3a;background:#13131a;flex-shrink:0;
+          max-height:120px;overflow-y:auto;
+        }
+        .transcript-inner{padding:12px 16px;font-size:12px;color:#8a87a0;line-height:1.6;word-wrap:break-word}
+        .transcript-inner .interim{color:#e6a23c;opacity:.7}
+
+        .mic-bar{
+          padding:12px;border-top:1px solid #2a2a3a;background:#0a0a0f;
+          display:flex;align-items:center;justify-content:center;gap:12px;flex-shrink:0;
+        }
+        .mic{
+          width:48px;height:48px;border-radius:50%;border:none;background:#e6a23c;
+          cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;
+        }
+        .mic.on{background:#ff5252}
+        .mic svg{fill:white}
+        .silence-bar{height:3px;width:120px;background:#2a2a3a;border-radius:2px;overflow:hidden}
+        .silence-fill{height:100%;background:#ff9800;width:0;transition:width .1s linear}
+
+        .debug-panel{width:360px;display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid #2a2a3a}
+        .debug-hdr{
+          padding:14px 16px;border-bottom:1px solid #2a2a3a;
+          font-size:13px;font-weight:700;letter-spacing:1px;color:#8a87a0;
+        }
+        .debug-content{flex:1;overflow-y:auto;padding:12px}
+        .log-entry{
+          font-size:11px;font-family:monospace;padding:4px 0;
+          border-bottom:1px solid #1a1a24;line-height:1.5;color:#8a87a0;
+        }
+        .log-entry .tag{font-weight:700;margin-right:6px}
+        .log-entry .tag.detect{color:#e6a23c}
+        .log-entry .tag.voice{color:#03a9f4}
+        .log-entry .tag.match{color:#00e676}
+        .log-entry .tag.error{color:#ff5252}
+        .log-entry .tag.skip{color:#555}
+
+        /* Framework card - live mode */
+        .framework-card{
+          background:#1a1a24;border:1px solid #2a2a3a;border-left:4px solid #6c5ce7;
+          border-radius:12px;padding:18px 20px;margin-bottom:12px;transition:all .3s;
+        }
+        .framework-card.latest{
+          border-color:#6c5ce7;background:#1e1c24;
+          box-shadow:0 0 20px rgba(108,92,231,.12);
+        }
+        .framework-card.collapsed{padding:10px 16px;cursor:pointer;opacity:.5}
+        .framework-card.collapsed .fw-body,
+        .framework-card.collapsed .fw-evidence,
+        .framework-card.collapsed .timestamp{display:none}
+        .framework-card.collapsed .fw-title{
+          font-size:13px;margin-bottom:0;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+        }
+
+        .fw-label{font-size:11px;font-weight:700;letter-spacing:1px;color:#6c5ce7;margin-bottom:4px}
+        .fw-title{font-size:17px;color:#e8e6f0;font-weight:600;margin-bottom:14px;line-height:1.4}
+        .fw-definition{color:#b0aec0;font-size:14px;line-height:1.6;margin-bottom:12px;font-style:italic}
+        .fw-pillars{list-style:none;padding:0}
+        .fw-pillars li{padding:4px 0 4px 12px;position:relative;font-size:14px;line-height:1.5}
+        .fw-pillars li::before{
+          content:"";position:absolute;left:0;top:11px;
+          width:5px;height:5px;border-radius:50%;background:#6c5ce7;
+        }
+        .fw-evidence{margin-top:14px;padding-top:12px;border-top:1px solid #2a2a3a}
+        .fw-evidence-title{font-size:10px;font-weight:700;letter-spacing:1px;color:#8a87a0;margin-bottom:6px}
+        .fw-evidence-label{font-size:10px;font-weight:700;letter-spacing:1px;color:#6c5ce7;margin-bottom:2px}
+        .fw-evidence-story{font-size:13px;color:#e6a23c;font-weight:600}
+        .fw-evidence-result{font-size:12px;color:#8a87a0;line-height:1.5;margin-top:2px}
+
+        /* Prep mode tabs */
+        .prep-mode-tabs{display:flex;gap:0;border-bottom:1px solid #2a2a3a;flex-shrink:0}
+        .prep-mode-tab{
+          padding:8px 20px;text-align:center;font-size:12px;font-weight:600;
+          color:#8a87a0;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;
+        }
+        .prep-mode-tab.active{color:#e6a23c;border-bottom-color:#e6a23c}
+        .prep-mode-tab.fw-active{color:#6c5ce7;border-bottom-color:#6c5ce7}
+        .prep-mode-tab:hover{color:#e8e6f0}
+
+        /* Prep mode framework cards */
+        .fw-prep-card{
+          background:#1a1a24;border:1px solid #2a2a3a;border-radius:10px;
+          padding:14px 16px;margin-bottom:8px;transition:all .2s;
+        }
+        .fw-prep-card.assigned{border-color:rgba(108,92,231,.3);background:#1e1c24}
+        .fw-prep-definition{font-size:12px;color:#8a87a0;font-style:italic;margin:6px 0}
+        .fw-prep-pillars{font-size:11px;color:#555;margin:4px 0 8px 0;line-height:1.6}
+        .fw-prep-select{
+          background:#12121a;border:1px solid #2a2a3a;border-radius:6px;
+          color:#e8e6f0;padding:5px 8px;font-size:12px;width:100%;margin-top:4px;
+        }
+        .fw-prep-select:focus{outline:none;border-color:#6c5ce7}
+        .fw-prep-label{font-size:11px;color:#6c5ce7;font-weight:600;margin-top:8px}
+
+        /* Fallback AI card */
+        .fallback-card{
+          background:#1a1a24;border:1px solid #2a2a3a;border-left:4px solid #03a9f4;
+          border-radius:12px;padding:18px 20px;margin-bottom:12px;transition:all .3s;
+        }
+        .fallback-card.latest{
+          border-color:#03a9f4;background:#1e1c24;
+          box-shadow:0 0 20px rgba(3,169,244,.12);
+        }
+        .fallback-card.collapsed{padding:10px 16px;cursor:pointer;opacity:.5}
+        .fallback-card.collapsed .fb-body,
+        .fallback-card.collapsed .carl-slot,
+        .fallback-card.collapsed .answer-hint,
+        .fallback-card.collapsed .fb-thinking,
+        .fallback-card.collapsed .timestamp{display:none}
+        .fallback-card.collapsed .fb-title{
+          font-size:13px;margin-bottom:0;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+        }
+        .fb-label{font-size:11px;font-weight:700;letter-spacing:1px;color:#03a9f4;margin-bottom:4px}
+        .fb-title{font-size:17px;color:#e8e6f0;font-weight:600;margin-bottom:14px;line-height:1.4}
+        .fb-body{font-size:14px;line-height:1.7;color:#d0cfe0}
+        .fb-body strong{color:#fff}
+        .fb-body ul{margin:4px 0 8px 16px}
+        .fb-body li{margin-bottom:4px}
+        .fb-thinking{color:#8a87a0;font-size:14px;font-style:italic}
+
+        /* Follow-up card */
+        .followup-card{
+          background:#1a1a24;border:1px solid #2a2a3a;border-left:4px solid #00e676;
+          border-radius:12px;padding:14px 16px;margin-bottom:12px;transition:all .3s;
+        }
+        .followup-card.latest{
+          border-color:#00e676;background:#1e1c24;
+          box-shadow:0 0 20px rgba(0,230,118,.12);
+        }
+        .followup-card.collapsed{padding:10px 16px;cursor:pointer;opacity:.5}
+        .followup-card.collapsed .fu-body,
+        .followup-card.collapsed .timestamp{display:none}
+        .followup-card.collapsed .fu-title{
+          font-size:13px;margin-bottom:0;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+        }
+        .fu-label{font-size:11px;font-weight:700;letter-spacing:1px;color:#00e676;margin-bottom:4px}
+        .fu-title{font-size:15px;color:#e8e6f0;font-weight:600;margin-bottom:10px;line-height:1.4}
+        .fu-body{font-size:14px;line-height:1.7;color:#d0cfe0}
+        .fu-body strong{color:#fff}
+        .fu-body ul{margin:4px 0 8px 16px}
+        .fu-body li{margin-bottom:4px}
+        .fu-thinking{color:#8a87a0;font-size:14px;font-style:italic}
+
+        /* Debug panel tabs and test input */
+        .debug-tabs{display:flex;gap:0;border-bottom:1px solid #2a2a3a}
+        .debug-tab{
+          flex:1;padding:8px;text-align:center;font-size:12px;font-weight:600;
+          color:#8a87a0;cursor:pointer;border-bottom:2px solid transparent;
+        }
+        .debug-tab.active{color:#e6a23c;border-bottom-color:#e6a23c}
+        .test-input{
+          width:100%;background:#1a1a24;border:1px solid #2a2a3a;border-radius:8px;
+          padding:10px 12px;color:#e8e6f0;font-size:13px;resize:vertical;
+          font-family:inherit;min-height:80px;
+        }
+        .test-input:focus{outline:none;border-color:#e6a23c}
+        .test-input::placeholder{color:#555}
+        .test-btn{
+          width:100%;background:#e6a23c;color:#0a0a0f;border:none;border-radius:8px;
+          padding:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;
+        }
+
+        ::-webkit-scrollbar{width:4px}
+        ::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:2px}
+        @media(max-width:800px){.debug-panel{display:none}}
+    </style>
+</head>
+<body>
+
+<!-- ===== PREP MODE ===== -->
+<div class="prep-view active" id="prepView">
+    <div class="prep-hdr">
+        <div class="prep-hdr-left">
+            <span class="prep-title">BEHAVIORAL PREP</span>
+            <span class="prep-progress" id="prepProgress">0 / 0 assigned</span>
+        </div>
+        <button class="start-btn" id="startBtn" onclick="startInterview()">Start Interview</button>
+    </div>
+    <div class="prep-mode-tabs">
+        <div class="prep-mode-tab active" id="tabStories" onclick="selectPrepMode('stories')">Stories (CARL)</div>
+        <div class="prep-mode-tab" id="tabFrameworks" onclick="selectPrepMode('frameworks')">Frameworks</div>
+    </div>
+    <div class="domain-tabs" id="domainTabs"></div>
+    <div class="prep-body" id="prepBody"></div>
+</div>
+
+<!-- ===== LIVE MODE ===== -->
+<div class="live-view" id="liveView">
+    <div class="layout">
+        <div class="app-panel">
+            <div class="live-hdr">
+                <div class="live-hdr-left">
+                    <div class="dot" id="dot"></div>
+                    <span class="live-title">BEHAVIORAL LIVE</span>
+                    <span class="live-domain" id="liveDomain"></span>
+                    <span class="live-status" id="liveStatus"></span>
+                    <span id="speechBadge" style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,0.08);color:#8a87a0;margin-left:4px"></span>
+                </div>
+                <button class="btn" onclick="backToPrep()">Prep</button>
+            </div>
+
+            <div class="feed" id="feed">
+                <div class="empty" id="emptyState">
+                    <div class="empty-icon">&#x1F3AF;</div>
+                    <div class="empty-title">Ready for Interview</div>
+                    <div class="empty-sub">Mic is listening. When the interviewer asks a behavioral question, your pre-selected story will appear automatically.</div>
+                </div>
+            </div>
+
+            <div class="coach-bar" id="coachBar">
+                <span class="coach-key" data-key="h">H</span> <span class="coach-label">Help</span>
+                <span class="coach-key" data-key="m">M</span> <span class="coach-label">More</span>
+                <span class="coach-key" data-key="l">L</span> <span class="coach-label">Last card</span>
+            </div>
+
+            <div class="transcript-bar">
+                <div class="transcript-inner" id="ttext"></div>
+            </div>
+
+            <div class="mic-bar">
+                <div class="silence-bar" id="silenceBar" style="visibility:hidden">
+                    <div class="silence-fill" id="silenceFill"></div>
+                </div>
+                <button class="mic" id="micBtn" onclick="toggleMic()">
+                    <svg id="micIcon" width="22" height="22" viewBox="0 0 24 24">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <line x1="12" y1="19" x2="12" y2="23" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                <div class="silence-bar" style="visibility:hidden"><div class="silence-fill"></div></div>
+            </div>
+        </div>
+
+        <div class="debug-panel">
+            <div class="debug-hdr">DEBUG</div>
+            <div class="debug-tabs">
+                <div class="debug-tab active" id="dbgTabTest" onclick="switchDebugTab('test')">Test</div>
+                <div class="debug-tab" id="dbgTabLog" onclick="switchDebugTab('log')">Log</div>
+            </div>
+            <div class="debug-content">
+                <div id="testPanel">
+                    <textarea class="test-input" id="testInput" placeholder="Paste interview speech to test behavioral detection..."></textarea>
+                    <button class="test-btn" onclick="runTestAnalyze()">Analyze Speech</button>
+                    <div id="testResults" style="margin-top:12px"></div>
+                </div>
+                <div id="logPanel" style="display:none"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ===== DATA =====
+    let allStories = [];
+    let categories = {};
+    let questionTypes = {};
+    let signals = {};
+    let questionKeywords = {};
+    let allFrameworks = [];
+    let frameworkKeywords = {};
+
+    let selectedDomain = "screen";
+    let assignments = {};  // { questionType: storyId }
+    let frameworkAssignments = {};  // { frameworkQuestionType: storyId }
+    let prepMode = "stories";  // "stories" or "frameworks"
+    let liveCards = [];
+    let lastUnmatchedQuestion = "";  // dedup for fallback cards
+    let lastActiveStory = null;  // tracks current story for follow-up context
+
+    // Speech
+    let listening = false, recognition = null;
+    let fullTranscript = "";
+    let pendingBuffer = "";
+    let lastSpeechTime = 0;
+    let silenceTimer = null;
+    let silenceAnimFrame = null;
+    let rollingTimer = null;
+    let analyzing = false;
+    let lastDetectedType = "";
+
+    function wordOverlap(a, b) {
+        const stem = w => w.replace(/(ment|tion|ing|ed|ly|er|est|ness|ive|al|ous|ful|able|ible|s|e)$/i, "");
+        const stop = new Set(["that","this","what","have","with","they","them","your","from","been","were","will","would","could","should","about","their","there","some","than","other","which","these","those","into","also","just","like","give","take","make","come","know"]);
+        const words = s => new Set(s.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter(w => w.length > 3 && !stop.has(w)).map(stem));
+        const wa = words(a), wb = words(b);
+        if (wa.size === 0 || wb.size === 0) return 0;
+        let shared = 0;
+        wa.forEach(w => { if (wb.has(w)) shared++; });
+        return shared / Math.min(wa.size, wb.size);
+    }
+
+    const SILENCE_MS = 3500;
+    const ROLLING_MS = 40000;
+    let lastChunkTail = "";
+
+    // Speech mode: "browser" or "deepgram"
+    const speechMode = new URLSearchParams(window.location.search).get("speech") || "browser";
+    const MIN_WORDS = 8;
+    const DG_FLUSH_MIN = 35;
+    let dgSocket = null;
+    let dgMediaStream = null;
+    let dgAudioContext = null;
+    let dgProcessor = null;
+
+    const MIC_SVG = `<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="23" stroke="white" stroke-width="2" stroke-linecap="round"/>`;
+    const STOP_SVG = `<rect x="6" y="6" width="12" height="12" rx="2" fill="white"/>`;
+
+    // ===== INIT =====
+    async function init() {
+        const saved = localStorage.getItem("behavioral-assignments");
+        if (saved) {
+            try { assignments = JSON.parse(saved); } catch (_) {}
+        }
+        const savedFw = localStorage.getItem("behavioral-framework-assignments");
+        if (savedFw) {
+            try { frameworkAssignments = JSON.parse(savedFw); } catch (_) {}
+        }
+        const savedDomain = localStorage.getItem("behavioral-domain");
+        if (savedDomain) selectedDomain = savedDomain;
+
+        try {
+            const resp = await fetch("/api/behavioral/data");
+            const data = await resp.json();
+            allStories = data.stories;
+            categories = data.categories;
+            questionTypes = data.questionTypes;
+            signals = data.signals;
+            questionKeywords = data.questionKeywords;
+            allFrameworks = data.frameworks || [];
+            frameworkKeywords = data.frameworkKeywords || {};
+            renderDomainTabs();
+            renderPrepGrid();
+        } catch (e) {
+            console.error("Failed to load behavioral data", e);
+        }
+    }
+
+    // ===== PREP MODE =====
+    function renderDomainTabs() {
+        const domains = [
+            { key: "screen", label: "Recruiter Screen" },
+            { key: "infra", label: "Infrastructure" },
+            { key: "data", label: "Data" },
+            { key: "payments", label: "Payments" },
+            { key: "all", label: "All" },
+        ];
+        const $tabs = document.getElementById("domainTabs");
+        $tabs.innerHTML = domains.map(d => {
+            const count = d.key === "all"
+                ? allStories.length
+                : allStories.filter(s => s.domains.includes(d.key) || s.domains.includes("general")).length;
+            return `<div class="domain-tab ${d.key === selectedDomain ? 'active' : ''}"
+                         onclick="selectDomain('${d.key}')">
+                ${d.label}<span class="count">(${count})</span>
+            </div>`;
+        }).join("");
+    }
+
+    function selectDomain(domain) {
+        selectedDomain = domain;
+        localStorage.setItem("behavioral-domain", domain);
+        renderDomainTabs();
+        renderPrepGrid();
+    }
+
+    function getStoriesForDomain(domain) {
+        if (domain === "all") return allStories;
+        return allStories.filter(s => s.domains.includes(domain) || s.domains.includes("general"));
+    }
+
+    function selectPrepMode(mode) {
+        prepMode = mode;
+        document.getElementById("tabStories").className = mode === "stories" ? "prep-mode-tab active" : "prep-mode-tab";
+        document.getElementById("tabFrameworks").className = mode === "frameworks" ? "prep-mode-tab fw-active" : "prep-mode-tab";
+        document.getElementById("domainTabs").style.display = mode === "frameworks" ? "none" : "flex";
+        renderPrepGrid();
+    }
+
+    function renderPrepGrid() {
+        if (prepMode === "frameworks") {
+            renderFrameworkPrepGrid();
+            return;
+        }
+        renderStoryPrepGrid();
+    }
+
+    function renderStoryPrepGrid() {
+        const $body = document.getElementById("prepBody");
+        const domainStories = getStoriesForDomain(selectedDomain);
+        let html = "";
+
+        for (const [catKey, cat] of Object.entries(categories)) {
+            if (catKey.startsWith("frameworks-")) continue;
+            html += `<div class="cat-section">`;
+            html += `<div class="cat-title">${cat.name.toUpperCase()}</div>`;
+
+            for (const qtKey of cat.questionTypes) {
+                const qt = questionTypes[qtKey];
+                if (!qt) continue;
+
+                const available = domainStories.filter(s => s.questionTypes.includes(qtKey));
+                const assigned = assignments[qtKey];
+                const isAssigned = assigned && available.some(s => s.id === assigned);
+
+                html += `<div class="qt-row ${isAssigned ? 'assigned' : ''}">`;
+                html += `<div class="qt-row-top">`;
+                html += `<span class="qt-name">${qt.name}</span>`;
+                html += `<div class="qt-signals">`;
+                for (const sig of qt.signals) {
+                    const s = signals[sig];
+                    html += `<span class="signal-tag">${s ? s.name.split('(')[0].trim() : sig}</span>`;
+                }
+                html += `</div></div>`;
+
+                if (available.length === 0) {
+                    html += `<div class="no-stories">No stories available for this domain</div>`;
+                } else {
+                    html += `<div class="qt-stories">`;
+                    for (const story of available) {
+                        const sel = assignments[qtKey] === story.id;
+                        html += `<div class="story-chip ${sel ? 'selected' : ''}"
+                                      onclick="assignStory('${qtKey}','${story.id}')"
+                                      title="${esc(story.card.c)}">${esc(story.title)}</div>`;
+                    }
+                    html += `</div>`;
+                }
+                html += `</div>`;
+            }
+            html += `</div>`;
+        }
+
+        $body.innerHTML = html;
+        updateProgress();
+    }
+
+    function renderFrameworkPrepGrid() {
+        const $body = document.getElementById("prepBody");
+        let html = "";
+
+        for (const [catKey, cat] of Object.entries(categories)) {
+            if (!catKey.startsWith("frameworks-")) continue;
+            html += `<div class="cat-section">`;
+            html += `<div class="cat-title" style="color:#6c5ce7;border-bottom-color:rgba(108,92,231,.2)">${cat.name.toUpperCase()}</div>`;
+
+            for (const qtKey of cat.questionTypes) {
+                const fw = allFrameworks.find(f => f.questionType === qtKey);
+                if (!fw) continue;
+                const qt = questionTypes[qtKey];
+
+                const assignedStoryId = frameworkAssignments[qtKey] || fw.storyLink;
+                const assignedStory = allStories.find(s => s.id === assignedStoryId);
+
+                html += `<div class="fw-prep-card ${assignedStory ? 'assigned' : ''}">`;
+                html += `<div class="qt-row-top">`;
+                html += `<span class="qt-name">${esc(qt ? qt.name : qtKey)}</span>`;
+                html += `<div class="qt-signals">`;
+                for (const sig of (fw.signals || [])) {
+                    const s = signals[sig];
+                    html += `<span class="signal-tag">${s ? s.name.split('(')[0].trim() : sig}</span>`;
+                }
+                html += `</div></div>`;
+
+                html += `<div class="fw-prep-definition">"${esc(fw.definition)}"</div>`;
+                html += `<div class="fw-prep-pillars">${fw.pillars.map(p => '&bull; ' + esc(p)).join('<br>')}</div>`;
+
+                html += `<div class="fw-prep-label">Evidence Story</div>`;
+                html += `<select class="fw-prep-select" onchange="assignFrameworkStory('${qtKey}', this.value)">`;
+                html += `<option value="">-- No story linked --</option>`;
+                for (const story of allStories) {
+                    const selected = assignedStoryId === story.id ? 'selected' : '';
+                    html += `<option value="${story.id}" ${selected}>${esc(story.title)}</option>`;
+                }
+                html += `</select>`;
+                if (assignedStory) {
+                    html += `<div style="font-size:11px;color:#8a87a0;margin-top:4px">${esc(assignedStory.card.r)}</div>`;
+                }
+
+                html += `</div>`;
+            }
+            html += `</div>`;
+        }
+
+        $body.innerHTML = html;
+        updateProgress();
+    }
+
+    function assignFrameworkStory(qtKey, storyId) {
+        if (storyId) {
+            frameworkAssignments[qtKey] = storyId;
+        } else {
+            delete frameworkAssignments[qtKey];
+        }
+        localStorage.setItem("behavioral-framework-assignments", JSON.stringify(frameworkAssignments));
+        renderFrameworkPrepGrid();
+    }
+
+    function assignStory(qtKey, storyId) {
+        if (assignments[qtKey] === storyId) {
+            delete assignments[qtKey];
+        } else {
+            assignments[qtKey] = storyId;
+        }
+        localStorage.setItem("behavioral-assignments", JSON.stringify(assignments));
+        renderPrepGrid();
+    }
+
+    function updateProgress() {
+        const domainStories = getStoriesForDomain(selectedDomain);
+        let total = 0, assigned = 0;
+        for (const [catKey, cat] of Object.entries(categories)) {
+            for (const qtKey of cat.questionTypes) {
+                const available = domainStories.filter(s => s.questionTypes.includes(qtKey));
+                if (available.length > 0) {
+                    total++;
+                    if (assignments[qtKey] && available.some(s => s.id === assignments[qtKey])) {
+                        assigned++;
+                    }
+                }
+            }
+        }
+        document.getElementById("prepProgress").textContent = `${assigned} / ${total} assigned`;
+    }
+
+    // ===== START INTERVIEW =====
+    function startInterview() {
+        document.getElementById("prepView").classList.remove("active");
+        document.getElementById("liveView").classList.add("active");
+        const domainLabel = {infra:"Infrastructure",data:"Data",payments:"Payments",all:"All Domains"};
+        document.getElementById("liveDomain").textContent = domainLabel[selectedDomain] || selectedDomain;
+
+        fetch("/api/behavioral/reset", { method: "POST" }).catch(() => {});
+
+        toggleMic();
+    }
+
+    function backToPrep() {
+        document.getElementById("liveView").classList.remove("active");
+        document.getElementById("prepView").classList.add("active");
+        if (listening) toggleMic();
+        liveCards = [];
+        document.getElementById("feed").innerHTML = `
+            <div class="empty" id="emptyState">
+                <div class="empty-icon">&#x1F3AF;</div>
+                <div class="empty-title">Ready for Interview</div>
+                <div class="empty-sub">Mic is listening. When the interviewer asks a behavioral question, your pre-selected story will appear automatically.</div>
+            </div>`;
+        fullTranscript = "";
+        pendingBuffer = "";
+        lastDetectedType = "";
+        lastUnmatchedQuestion = "";
+        lastActiveStory = null;
+        lastChunkTail = "";
+    }
+
+    // ===== SPEECH =====
+    function initRecognition() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) return null;
+        const rec = new SR();
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.lang = "en-US";
+
+        rec.onresult = function (e) {
+            let interimText = "", finalText = "";
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+                const t = e.results[i][0].transcript;
+                if (e.results[i].isFinal) finalText += t + " ";
+                else interimText += t;
+            }
+
+            document.getElementById("ttext").innerHTML =
+                esc(fullTranscript.slice(-200) + " " + pendingBuffer + " " + finalText) +
+                (interimText ? '<span class="interim"> ' + esc(interimText) + "</span>" : "");
+
+            if (!finalText.trim()) return;
+            const chunk = finalText.trim();
+            pendingBuffer += " " + chunk;
+            lastSpeechTime = Date.now();
+            devLog("VOICE", chunk);
+
+            clearTimeout(silenceTimer);
+            startSilenceAnimation();
+            silenceTimer = setTimeout(() => onAnalyze("silence"), SILENCE_MS);
+
+            if (!rollingTimer) {
+                rollingTimer = setTimeout(() => {
+                    rollingTimer = null;
+                    if (pendingBuffer.trim() && pendingBuffer.trim().split(/\s+/).length >= 12) {
+                        devLog("FLUSH", `rolling check (${pendingBuffer.trim().split(/\s+/).length} words)`);
+                        onAnalyze("rolling");
+                    }
+                }, ROLLING_MS);
+            }
+        };
+
+        rec.onerror = function (e) {
+            devLog("ERROR", e.error);
+            if (e.error === "not-allowed") { listening = false; updateMicUI(); return; }
+            if (listening) setTimeout(() => { try { rec.start() } catch (_) {} }, 500);
+        };
+        rec.onend = function () {
+            if (listening) setTimeout(() => { try { rec.start() } catch (_) {} }, 200);
+        };
+        return rec;
+    }
+
+    // ===== DEEPGRAM SPEECH MODULE =====
+    async function startDeepgram() {
+        try {
+            dgMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (e) {
+            alert("Microphone access denied");
+            listening = false;
+            updateMicUI();
+            return;
+        }
+
+        const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        dgSocket = new WebSocket(`${wsProtocol}//${window.location.host}/ws/deepgram`);
+
+        dgSocket.onopen = () => {
+            devLog("DEEPGRAM", "WebSocket connected, waiting for Deepgram...");
+        };
+
+        dgSocket.onmessage = (evt) => {
+            const msg = JSON.parse(evt.data);
+
+            if (msg.type === "ready") {
+                devLog("DEEPGRAM", "Deepgram ready — starting audio capture");
+                startAudioCapture();
+                setStatus("listening (deepgram)...");
+            }
+
+            if (msg.type === "transcript") {
+                const { transcript, isFinal, speechFinal, speakers } = msg;
+                if (!transcript) return;
+
+                if (isFinal) {
+                    const speakerTag = speakers && speakers.length > 0 ? `[S${speakers[0]}] ` : "";
+                    pendingBuffer += " " + transcript;
+                    lastSpeechTime = Date.now();
+                    devLog("VOICE_DG", `${speakerTag}${transcript}`);
+
+                    document.getElementById("ttext").innerHTML =
+                        esc(fullTranscript.slice(-200) + " " + pendingBuffer) +
+                        '<span class="interim"></span>';
+
+                    clearTimeout(silenceTimer);
+                    startSilenceAnimation();
+                    silenceTimer = setTimeout(() => onAnalyze("silence"), SILENCE_MS);
+
+                    if (!rollingTimer) {
+                        rollingTimer = setTimeout(() => {
+                            rollingTimer = null;
+                            const minRolling = speechMode === "deepgram" ? DG_FLUSH_MIN : 12;
+                            if (pendingBuffer.trim() && pendingBuffer.trim().split(/\s+/).length >= minRolling) {
+                                devLog("FLUSH", `rolling check (${pendingBuffer.trim().split(/\s+/).length} words)`);
+                                onAnalyze("rolling");
+                            }
+                        }, ROLLING_MS);
+                    }
+                } else {
+                    document.getElementById("ttext").innerHTML =
+                        esc(fullTranscript.slice(-200) + " " + pendingBuffer) +
+                        '<span class="interim"> ' + esc(transcript) + "</span>";
+                }
+            }
+
+            if (msg.type === "utterance_end") {
+                const wc = pendingBuffer.trim() ? pendingBuffer.trim().split(/\s+/).length : 0;
+                if (wc >= DG_FLUSH_MIN) {
+                    devLog("FLUSH", `utterance end (${wc} words)`);
+                    onAnalyze("utterance_end");
+                }
+            }
+
+            if (msg.error) {
+                devLog("ERROR", `Deepgram: ${msg.error || msg.message}`);
+            }
+        };
+
+        dgSocket.onclose = () => {
+            devLog("DEEPGRAM", "WebSocket closed");
+            if (listening) {
+                setTimeout(() => {
+                    if (listening) startDeepgram();
+                }, 1000);
+            }
+        };
+
+        dgSocket.onerror = (e) => {
+            devLog("ERROR", "Deepgram WebSocket error");
+        };
+    }
+
+    async function startAudioCapture() {
+        dgAudioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        const source = dgAudioContext.createMediaStreamSource(dgMediaStream);
+
+        // Use AudioWorklet if available, fallback to ScriptProcessor
+        try {
+            const workletCode = `
+                class PCMProcessor extends AudioWorkletProcessor {
+                    process(inputs) {
+                        const input = inputs[0];
+                        if (input.length > 0) {
+                            const float32 = input[0];
+                            const pcm16 = new Int16Array(float32.length);
+                            for (let i = 0; i < float32.length; i++) {
+                                const s = Math.max(-1, Math.min(1, float32[i]));
+                                pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                            }
+                            this.port.postMessage(pcm16.buffer, [pcm16.buffer]);
+                        }
+                        return true;
+                    }
+                }
+                registerProcessor('pcm-processor', PCMProcessor);
+            `;
+            const blob = new Blob([workletCode], { type: "application/javascript" });
+            const url = URL.createObjectURL(blob);
+            await dgAudioContext.audioWorklet.addModule(url);
+            URL.revokeObjectURL(url);
+
+            const workletNode = new AudioWorkletNode(dgAudioContext, "pcm-processor");
+            workletNode.port.onmessage = (e) => {
+                if (!listening || !dgSocket || dgSocket.readyState !== WebSocket.OPEN) return;
+                dgSocket.send(e.data);
+            };
+            source.connect(workletNode);
+            workletNode.connect(dgAudioContext.destination);
+            dgProcessor = workletNode;
+            devLog("DEEPGRAM", "audio capture started (AudioWorklet)");
+        } catch (e) {
+            devLog("DEEPGRAM", `AudioWorklet failed, using ScriptProcessor: ${e.message}`);
+            dgProcessor = dgAudioContext.createScriptProcessor(4096, 1, 1);
+            dgProcessor.onaudioprocess = (ev) => {
+                if (!listening || !dgSocket || dgSocket.readyState !== WebSocket.OPEN) return;
+                const inputData = ev.inputBuffer.getChannelData(0);
+                const pcm16 = new Int16Array(inputData.length);
+                for (let i = 0; i < inputData.length; i++) {
+                    const s = Math.max(-1, Math.min(1, inputData[i]));
+                    pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                }
+                dgSocket.send(pcm16.buffer);
+            };
+            source.connect(dgProcessor);
+            dgProcessor.connect(dgAudioContext.destination);
+            devLog("DEEPGRAM", "audio capture started (ScriptProcessor)");
+        }
+    }
+
+    function stopDeepgram() {
+        if (dgProcessor) { dgProcessor.disconnect(); dgProcessor = null; }
+        if (dgAudioContext) { dgAudioContext.close(); dgAudioContext = null; }
+        if (dgMediaStream) { dgMediaStream.getTracks().forEach(t => t.stop()); dgMediaStream = null; }
+        if (dgSocket && dgSocket.readyState === WebSocket.OPEN) { dgSocket.close(); dgSocket = null; }
+    }
+
+    function startSilenceAnimation() {
+        document.getElementById("silenceBar").style.visibility = "visible";
+        cancelAnimationFrame(silenceAnimFrame);
+        function animate() {
+            if (!listening) { document.getElementById("silenceFill").style.width = "0"; return; }
+            const pct = Math.min((Date.now() - lastSpeechTime) / SILENCE_MS * 100, 100);
+            document.getElementById("silenceFill").style.width = pct + "%";
+            if (pct < 100) silenceAnimFrame = requestAnimationFrame(animate);
+        }
+        animate();
+    }
+
+    // ===== ANALYZE =====
+    async function onAnalyze(trigger) {
+        const buffer = pendingBuffer.trim();
+        if (!buffer) return;
+        if (buffer.split(/\s+/).length < MIN_WORDS) {
+            devLog("SKIP", `too short (${buffer.split(/\s+/).length} words)`);
+            if (trigger !== "rolling") { fullTranscript += " " + buffer; pendingBuffer = ""; }
+            return;
+        }
+        if (analyzing) { devLog("SKIP", "already analyzing"); return; }
+
+        analyzing = true;
+        setStatus("analyzing...");
+        document.getElementById("dot").className = "dot thinking";
+
+        fullTranscript += " " + buffer;
+        const speechToSend = lastChunkTail ? (lastChunkTail + " " + buffer) : buffer;
+        const words = buffer.split(/\s+/);
+        lastChunkTail = words.slice(-8).join(" ");
+        pendingBuffer = "";
+
+        devLog("DETECT", `sending (${speechToSend.split(/\s+/).length} words, overlap: ${lastChunkTail.split(/\s+/).length})`);
+
+        try {
+            const resp = await fetch("/api/behavioral/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    recentSpeech: speechToSend,
+                    fullContext: fullTranscript.slice(-3000),
+                    lastDetectedType,
+                }),
+            });
+            const data = await resp.json();
+            devLog("DETECT", `result: ${JSON.stringify(data)}`);
+
+            const isQuestion = ["question_detected", "framework_detected", "unmatched_question", "follow_up"].includes(data.action);
+            if (isQuestion && data.question) {
+                const dedup = data.questionType || data.question;
+                const isDup = dedup === lastDetectedType ||
+                    (lastDetectedQuestion && wordOverlap(data.question, lastDetectedQuestion) >= 0.4);
+                if (!isDup || data.action === "follow_up") {
+                    lastDetectedType = data.questionType || dedup;
+                    lastDetectedQuestion = data.question;
+                    lastDetectedIntent = data.intent || "";
+                    coachDepth = 0;
+                    showIntelligentCard(data);
+                } else {
+                    devLog("SKIP", `similar question suppressed: ${data.question.slice(0, 50)}`);
+                }
+            }
+            setStatus("");
+        } catch (e) {
+            devLog("ERROR", `analyze failed: ${e.message}`);
+            setStatus("error");
+        }
+        analyzing = false;
+        document.getElementById("dot").className = listening ? "dot on" : "dot";
+    }
+
+    // ===== SHOW STORY CARD =====
+    // ===== UNIFIED INTELLIGENT CARD =====
+    function buildCarlHtml(story) {
+        return `
+        <div class="carl-refresher" style="margin-top:12px;padding:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#e6a23c;margin-bottom:8px;font-weight:600">${esc(story.title)}</div>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px;line-height:1.5">
+                <span style="color:#4fc3f7;font-weight:600;font-size:11px">C</span>
+                <span style="color:#b0adc0">${esc(story.card.c)}</span>
+                <span style="color:#81c784;font-weight:600;font-size:11px">A</span>
+                <span style="color:#b0adc0">${story.card.a.map(a => esc(a)).join(" · ")}</span>
+                <span style="color:#ffb74d;font-weight:600;font-size:11px">R</span>
+                <span style="color:#e8e6f0;font-weight:500">${esc(story.card.r)}</span>
+                <span style="color:#ce93d8;font-weight:600;font-size:11px">L</span>
+                <span style="color:#b0adc0">${esc(story.card.l)}</span>
+            </div>
+        </div>`;
+    }
+
+    async function showIntelligentCard(data) {
+        const question = data.question || "follow-up";
+        const intent = data.intent || "unknown";
+        const isFollowUp = data.action === "follow_up";
+        const label = isFollowUp ? "FOLLOW-UP" : intent === "probe" ? "PROBING DEEPER" : "QUESTION DETECTED";
+
+        devLog("CARD", `[${intent}] generating for: "${question.slice(0, 60)}"`);
+
+        document.getElementById("emptyState")?.remove();
+        collapseOldCards();
+
+        const el = document.createElement("div");
+        el.className = "fallback-card latest";
+        el.innerHTML = `
+            <div class="fb-label">${esc(label)} <span style="opacity:0.5;font-size:11px">${esc(intent)}</span></div>
+            ${data.answerHint ? `<div class="answer-hint">→ ${esc(data.answerHint)}</div>` : ""}
+            <div class="fb-title">${esc(question)}</div>
+            <div class="fb-thinking">thinking...</div>
+            <div class="fb-body"></div>
+            <div class="carl-slot"></div>
+            <div class="timestamp">${new Date().toLocaleTimeString()}</div>
+        `;
+
+        el.addEventListener("click", () => {
+            if (el.classList.contains("collapsed")) el.classList.remove("collapsed");
+        });
+
+        document.getElementById("feed").appendChild(el);
+        document.getElementById("feed").scrollTop = document.getElementById("feed").scrollHeight;
+        liveCards.push({ qtKey: data.questionType || "intelligent", el });
+
+        const thinkingDiv = el.querySelector(".fb-thinking");
+        const bodyDiv = el.querySelector(".fb-body");
+        const carlSlot = el.querySelector(".carl-slot");
+
+        try {
+            const resp = await fetch("/api/behavioral/answer", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question,
+                    intent,
+                    context: fullTranscript.slice(-2000),
+                    matchedStoryKey: data.questionType || null,
+                    isFollowUp,
+                }),
+            });
+
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder();
+            let fullText = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split("\n");
+                for (const line of lines) {
+                    if (!line.startsWith("data: ")) continue;
+                    const raw = line.slice(6).trim();
+                    if (raw === "[DONE]") continue;
+                    try {
+                        const evt = JSON.parse(raw);
+                        if (evt.text) {
+                            fullText += evt.text;
+                            thinkingDiv.style.display = "none";
+                            const displayText = fullText.replace(/\[STORY:[^\]]*\]/g, "").trim();
+                            bodyDiv.innerHTML = renderMarkdown(displayText);
+                            el.scrollIntoView({ behavior: "smooth", block: "end" });
+                        }
+                        if (evt.done) {
+                            const storyMatch = fullText.match(/\[STORY:([^\]]+)\]/);
+                            const displayText = fullText.replace(/\[STORY:[^\]]*\]/g, "").trim();
+                            bodyDiv.innerHTML = renderMarkdown(displayText);
+
+                            if (storyMatch) {
+                                const storyId = storyMatch[1].trim();
+                                const story = allStories.find(s => s.id === storyId);
+                                if (story) {
+                                    lastActiveStory = story;
+                                    carlSlot.innerHTML = buildCarlHtml(story);
+                                    devLog("CARL", `showing story refresher: ${story.title}`);
+                                    el.scrollIntoView({ behavior: "smooth", block: "end" });
+                                }
+                            }
+                        }
+                    } catch (_) {}
+                }
+            }
+        } catch (e) {
+            devLog("ERROR", `answer failed: ${e.message}`);
+            thinkingDiv.style.display = "none";
+            bodyDiv.innerHTML = `<em style="color:#ff5252">Error: ${esc(e.message)}</em>`;
+        }
+    }
+
+    function renderMarkdown(text) {
+        return text
+            .replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => `<pre style="background:#12121a;border:1px solid #2a2a3a;border-radius:8px;padding:12px;font-size:13px;overflow-x:auto"><code>${esc(code.trim())}</code></pre>`)
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/^\- (.+)/gm, '<li>$1</li>')
+            .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+            .replace(/\n/g, '<br>');
+    }
+
+    function collapseOldCards() {
+        for (let i = 0; i < liveCards.length; i++) {
+            liveCards[i].el.classList.remove("latest");
+            if (i < liveCards.length - 1) {
+                liveCards[i].el.classList.add("collapsed");
+            }
+        }
+    }
+
+    // ===== KEYBOARD COACH =====
+    let lastDetectedQuestion = "";
+    let lastDetectedIntent = "";
+    let coachBusy = false;
+    let coachDepth = 0;
+
+    document.addEventListener("keydown", (ev) => {
+        if (!listening) return;
+        if (ev.target.tagName === "INPUT" || ev.target.tagName === "TEXTAREA") return;
+        const key = ev.key.toLowerCase();
+        if (key !== "h" && key !== "m" && key !== "l") return;
+
+        ev.preventDefault();
+
+        document.querySelectorAll(".coach-key").forEach(el => {
+            el.classList.toggle("active", el.dataset.key === key);
+        });
+        document.getElementById("coachBar").classList.add("flash");
+        setTimeout(() => {
+            document.getElementById("coachBar").classList.remove("flash");
+            document.querySelectorAll(".coach-key").forEach(el => el.classList.remove("active"));
+        }, 300);
+
+        if (key === "l") {
+            showLastCard();
+            return;
+        }
+
+        if (coachBusy || !lastDetectedQuestion) return;
+
+        if (key === "h") {
+            requestHelp();
+        } else if (key === "m") {
+            coachDepth++;
+            requestMoreDetail();
+        }
+    });
+
+    function showLastCard() {
+        if (liveCards.length === 0) return;
+        const last = liveCards[liveCards.length - 1];
+        if (last.el.classList.contains("collapsed")) {
+            last.el.classList.remove("collapsed");
+            last.el.scrollIntoView({ behavior: "smooth", block: "start" });
+            devLog("COACH", "L pressed — expanded last card");
+        } else if (liveCards.length >= 2) {
+            const prev = liveCards[liveCards.length - 2];
+            prev.el.classList.remove("collapsed");
+            prev.el.scrollIntoView({ behavior: "smooth", block: "start" });
+            devLog("COACH", "L pressed — expanded previous card");
+        }
+    }
+
+    async function requestHelp() {
+        coachBusy = true;
+        devLog("COACH", `H pressed — help for: "${lastDetectedQuestion}"`);
+
+        document.getElementById("emptyState")?.remove();
+        collapseOldCards();
+
+        const el = document.createElement("div");
+        el.className = "fallback-card latest";
+        el.innerHTML = `
+            <div class="fb-label" style="color:#ffd700">HELP — DETAILED ANSWER</div>
+            <div class="fb-title">${esc(lastDetectedQuestion)}</div>
+            <div class="fb-thinking">generating...</div>
+            <div class="fb-body"></div>
+            <div class="timestamp">${new Date().toLocaleTimeString()}</div>
+        `;
+        el.addEventListener("click", () => {
+            if (el.classList.contains("collapsed")) el.classList.remove("collapsed");
+        });
+        document.getElementById("feed").appendChild(el);
+        document.getElementById("feed").scrollTop = document.getElementById("feed").scrollHeight;
+        liveCards.push({ qtKey: "help", el });
+
+        const thinkingDiv = el.querySelector(".fb-thinking");
+        const bodyDiv = el.querySelector(".fb-body");
+
+        try {
+            const resp = await fetch("/api/behavioral/help", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question: lastDetectedQuestion,
+                    intent: lastDetectedIntent,
+                    context: fullTranscript.slice(-2000),
+                }),
+            });
+
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder();
+            let buf = "", fullText = "";
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += decoder.decode(value, { stream: true });
+                const lines = buf.split("\n");
+                buf = lines.pop();
+                for (const line of lines) {
+                    if (!line.startsWith("data: ")) continue;
+                    try {
+                        const evt = JSON.parse(line.slice(6));
+                        if (evt.text) {
+                            fullText += evt.text;
+                            thinkingDiv.style.display = "none";
+                            bodyDiv.innerHTML = renderMarkdown(fullText);
+                        }
+                        if (evt.done) bodyDiv.innerHTML = renderMarkdown(fullText);
+                    } catch (_) {}
+                }
+            }
+        } catch (e) {
+            thinkingDiv.style.display = "none";
+            bodyDiv.innerHTML = `<em style="color:#ff5252">Error: ${esc(e.message)}</em>`;
+        }
+        coachBusy = false;
+    }
+
+    async function requestMoreDetail() {
+        coachBusy = true;
+        devLog("COACH", `M pressed — more detail (depth ${coachDepth})`);
+
+        document.getElementById("emptyState")?.remove();
+
+        const el = document.createElement("div");
+        el.className = "followup-card latest";
+        el.innerHTML = `
+            <div class="fu-label" style="color:#ffd700">MORE DETAIL (level ${coachDepth})</div>
+            <div class="fu-thinking">generating...</div>
+            <div class="fu-body"></div>
+            <div class="timestamp">${new Date().toLocaleTimeString()}</div>
+        `;
+        el.addEventListener("click", () => {
+            if (el.classList.contains("collapsed")) el.classList.remove("collapsed");
+        });
+        document.getElementById("feed").appendChild(el);
+        document.getElementById("feed").scrollTop = document.getElementById("feed").scrollHeight;
+        liveCards.push({ qtKey: "more", el });
+
+        const thinkingDiv = el.querySelector(".fu-thinking");
+        const bodyDiv = el.querySelector(".fu-body");
+
+        try {
+            const resp = await fetch("/api/behavioral/help", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question: lastDetectedQuestion,
+                    intent: lastDetectedIntent,
+                    context: fullTranscript.slice(-2000),
+                    depth: coachDepth,
+                }),
+            });
+
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder();
+            let buf = "", fullText = "";
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buf += decoder.decode(value, { stream: true });
+                const lines = buf.split("\n");
+                buf = lines.pop();
+                for (const line of lines) {
+                    if (!line.startsWith("data: ")) continue;
+                    try {
+                        const evt = JSON.parse(line.slice(6));
+                        if (evt.text) {
+                            fullText += evt.text;
+                            thinkingDiv.style.display = "none";
+                            bodyDiv.innerHTML = renderMarkdown(fullText);
+                        }
+                        if (evt.done) bodyDiv.innerHTML = renderMarkdown(fullText);
+                    } catch (_) {}
+                }
+            }
+        } catch (e) {
+            thinkingDiv.style.display = "none";
+            bodyDiv.innerHTML = `<em style="color:#ff5252">Error: ${esc(e.message)}</em>`;
+        }
+        coachBusy = false;
+    }
+
+    // ===== MIC =====
+    function toggleMic() {
+        listening = !listening;
+        if (listening) {
+            if (speechMode === "deepgram") {
+                startDeepgram();
+            } else {
+                if (!recognition) recognition = initRecognition();
+                if (!recognition) { alert("Speech recognition not supported. Try ?speech=deepgram"); listening = false; return; }
+                recognition.start();
+                setStatus("listening...");
+            }
+        } else {
+            if (speechMode === "deepgram") {
+                stopDeepgram();
+            } else if (recognition) {
+                recognition.stop();
+            }
+            clearTimeout(silenceTimer);
+            clearTimeout(rollingTimer);
+            rollingTimer = null;
+            setStatus("");
+        }
+        updateMicUI();
+    }
+
+    function updateMicUI() {
+        document.getElementById("micBtn").className = listening ? "mic on" : "mic";
+        document.getElementById("micIcon").innerHTML = listening ? STOP_SVG : MIC_SVG;
+        document.getElementById("dot").className = listening ? "dot on" : "dot";
+        if (!listening) {
+            document.getElementById("silenceBar").style.visibility = "hidden";
+            document.getElementById("silenceFill").style.width = "0";
+        }
+    }
+
+    function setStatus(s) {
+        document.getElementById("liveStatus").textContent = s;
+    }
+
+    function devLog(tag, msg) {
+        console.log(`[${tag}]`, msg);
+        const el = document.createElement("div");
+        el.className = "log-entry";
+        el.innerHTML = `<span class="tag ${tag.toLowerCase()}">[${tag}]</span>${esc(typeof msg === "string" ? msg : JSON.stringify(msg))}`;
+        const $log = document.getElementById("logPanel");
+        $log.prepend(el);
+        if ($log.children.length > 200) $log.lastChild.remove();
+    }
+
+    function esc(s) {
+        return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // ===== DEBUG PANEL =====
+    function switchDebugTab(tab) {
+        document.getElementById("dbgTabTest").className = tab === "test" ? "debug-tab active" : "debug-tab";
+        document.getElementById("dbgTabLog").className = tab === "log" ? "debug-tab active" : "debug-tab";
+        document.getElementById("testPanel").style.display = tab === "test" ? "" : "none";
+        document.getElementById("logPanel").style.display = tab === "log" ? "" : "none";
+    }
+
+    async function runTestAnalyze() {
+        const text = document.getElementById("testInput").value.trim();
+        if (!text) return;
+        const $results = document.getElementById("testResults");
+        $results.innerHTML = '<div style="color:#8a87a0;font-size:12px">analyzing...</div>';
+
+        try {
+            const resp = await fetch("/api/behavioral/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    recentSpeech: text,
+                    fullContext: text,
+                    lastDetectedType: "",
+                }),
+            });
+            const data = await resp.json();
+
+            let html = `<div style="font-size:12px;font-family:monospace;line-height:1.8;color:#e8e6f0">`;
+            html += `<div><strong style="color:#e6a23c">Action:</strong> ${esc(data.action)}</div>`;
+            if (data.questionType) html += `<div><strong style="color:#e6a23c">Type:</strong> ${esc(data.questionType)}</div>`;
+            if (data.question) html += `<div><strong style="color:#e6a23c">Question:</strong> ${esc(data.question)}</div>`;
+
+            if (data.action === "question_detected" && data.questionType) {
+                const qt = questionTypes[data.questionType];
+                const storyId = assignments[data.questionType];
+                const story = storyId ? allStories.find(s => s.id === storyId) : null;
+                html += `<div style="margin-top:8px;padding:8px;background:#12121a;border-radius:6px">`;
+                html += `<div style="color:#e6a23c;font-weight:600">${qt ? qt.name : data.questionType}</div>`;
+                html += story
+                    ? `<div style="color:#8a87a0;margin-top:4px">Story: ${esc(story.title)}</div>`
+                    : `<div style="color:#ff9800;margin-top:4px">No story assigned</div>`;
+                html += `</div>`;
+            }
+
+            if (data.action === "framework_detected" && data.framework) {
+                html += `<div style="margin-top:8px;padding:8px;background:#12121a;border-radius:6px">`;
+                html += `<div style="color:#6c5ce7;font-weight:600">${esc(data.framework.definition)}</div>`;
+                html += `<div style="color:#8a87a0;margin-top:4px">${data.framework.pillars.length} pillars</div>`;
+                if (data.linkedStory) html += `<div style="color:#8a87a0;margin-top:2px">Pivot: ${esc(data.linkedStory.title)}</div>`;
+                html += `</div>`;
+            }
+
+            if (data.action === "unmatched_question") {
+                html += `<div style="margin-top:8px;padding:8px;background:#12121a;border-radius:6px">`;
+                html += `<div style="color:#03a9f4;font-weight:600">Will generate AI fallback</div>`;
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            $results.innerHTML = html;
+        } catch (e) {
+            $results.innerHTML = `<div style="color:#ff5252;font-size:12px">Error: ${esc(e.message)}</div>`;
+        }
+    }
+
+    init();
+    document.getElementById("speechBadge").textContent = speechMode === "deepgram" ? "DEEPGRAM" : "BROWSER";
+    if (speechMode === "deepgram") document.getElementById("speechBadge").style.color = "#4fc3f7";
+</script>
+</body>
+</html>

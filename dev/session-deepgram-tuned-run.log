@@ -1,0 +1,492 @@
+
+  Voice Q&A — Interview Coach
+  http://localhost:3000
+
+  System Design: http://localhost:3000/
+  Coding:        http://localhost:3000/coding.html
+  Behavioral:    http://localhost:3000/behavioral.html
+
+  /api/analyze             — system design detection
+  /api/answer              — system design answers
+  /api/coding/analyze      — coding problem detection
+  /api/coding/answer       — coding answers
+  /api/behavioral/analyze  — behavioral question detection
+  /api/behavioral/data     — behavioral story bank
+  /api/state               — view conversation state
+  /api/reset               — reset state
+  /ws/deepgram             — Deepgram speech WebSocket ✓
+
+  HTTPS (for mobile): https://localhost:3443
+  iPad/mobile:        https://192.168.68.64:3443/behavioral.html?speech=deepgram
+
+[2026-04-28T11:20:16.306Z] [BEHAVIORAL_STATE] behavioral state reset
+[2026-04-28T11:20:16.620Z] [DEEPGRAM] client connected
+[2026-04-28T11:20:17.707Z] [DEEPGRAM] connected to Deepgram API
+[2026-04-28T11:20:20.439Z] [DEEPGRAM] receiving audio (first chunk: 256 bytes)
+[2026-04-28T11:20:21.223Z] [DEEPGRAM] audio chunks forwarded: 100
+[2026-04-28T11:20:22.023Z] [DEEPGRAM] audio chunks forwarded: 200
+[2026-04-28T11:20:22.821Z] [DEEPGRAM] audio chunks forwarded: 300
+[2026-04-28T11:20:23.621Z] [DEEPGRAM] audio chunks forwarded: 400
+[2026-04-28T11:20:24.420Z] [DEEPGRAM] audio chunks forwarded: 500
+[2026-04-28T11:20:25.221Z] [DEEPGRAM] audio chunks forwarded: 600
+[2026-04-28T11:20:26.020Z] [DEEPGRAM] audio chunks forwarded: 700
+[2026-04-28T11:20:26.821Z] [DEEPGRAM] audio chunks forwarded: 800
+[2026-04-28T11:20:27.621Z] [DEEPGRAM] audio chunks forwarded: 900
+[2026-04-28T11:20:28.420Z] [DEEPGRAM] audio chunks forwarded: 1000
+[2026-04-28T11:20:29.221Z] [DEEPGRAM] audio chunks forwarded: 1100
+[2026-04-28T11:20:30.020Z] [DEEPGRAM] audio chunks forwarded: 1200
+[2026-04-28T11:20:30.820Z] [DEEPGRAM] audio chunks forwarded: 1300
+[2026-04-28T11:20:31.622Z] [DEEPGRAM] audio chunks forwarded: 1400
+[2026-04-28T11:20:32.420Z] [DEEPGRAM] audio chunks forwarded: 1500
+[2026-04-28T11:20:33.221Z] [DEEPGRAM] audio chunks forwarded: 1600
+[2026-04-28T11:20:34.021Z] [DEEPGRAM] audio chunks forwarded: 1700
+[2026-04-28T11:20:34.820Z] [DEEPGRAM] audio chunks forwarded: 1800
+[2026-04-28T11:20:35.624Z] [DEEPGRAM] audio chunks forwarded: 1900
+[2026-04-28T11:20:36.423Z] [DEEPGRAM] audio chunks forwarded: 2000
+[2026-04-28T11:20:37.224Z] [DEEPGRAM] audio chunks forwarded: 2100
+[2026-04-28T11:20:38.021Z] [DEEPGRAM] audio chunks forwarded: 2200
+[2026-04-28T11:20:38.821Z] [DEEPGRAM] audio chunks forwarded: 2300
+[2026-04-28T11:20:39.621Z] [DEEPGRAM] audio chunks forwarded: 2400
+[2026-04-28T11:20:40.420Z] [DEEPGRAM] audio chunks forwarded: 2500
+[2026-04-28T11:20:41.336Z] [DEEPGRAM] audio chunks forwarded: 2600
+[2026-04-28T11:20:42.020Z] [DEEPGRAM] audio chunks forwarded: 2700
+[2026-04-28T11:20:42.198Z] [BEHAVIORAL_ANALYZE] input (31 words): "Right now, I have 25 FTEs. Okay. And I have about 15 contracts. Alright. Growing every day. It's a very big team. And now I don't know what's happened..."
+[2026-04-28T11:20:42.825Z] [DEEPGRAM] audio chunks forwarded: 2800
+[2026-04-28T11:20:43.621Z] [DEEPGRAM] audio chunks forwarded: 2900
+[2026-04-28T11:20:44.420Z] [DEEPGRAM] audio chunks forwarded: 3000
+[2026-04-28T11:20:45.220Z] [DEEPGRAM] audio chunks forwarded: 3100
+[2026-04-28T11:20:45.326Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:20:45.326Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:20:46.031Z] [DEEPGRAM] audio chunks forwarded: 3200
+[2026-04-28T11:20:46.820Z] [DEEPGRAM] audio chunks forwarded: 3300
+[2026-04-28T11:20:47.228Z] [BEHAVIORAL_ANALYZE] input (27 words): "now I don't know what's happened at the at the bank, and of other places too. You know, we are kind of flattening the organization or flattening...."
+[2026-04-28T11:20:47.622Z] [DEEPGRAM] audio chunks forwarded: 3400
+[2026-04-28T11:20:48.420Z] [DEEPGRAM] audio chunks forwarded: 3500
+[2026-04-28T11:20:49.220Z] [DEEPGRAM] audio chunks forwarded: 3600
+[2026-04-28T11:20:49.387Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:20:49.388Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:20:50.022Z] [DEEPGRAM] audio chunks forwarded: 3700
+[2026-04-28T11:20:50.790Z] [BEHAVIORAL_ANALYZE] input (21 words): "are kind of flattening the organization or flattening. So now I deal with all of that with just the only manager...."
+[2026-04-28T11:20:50.812Z] [DEEPGRAM] audio chunks forwarded: 3800
+[2026-04-28T11:20:51.624Z] [DEEPGRAM] audio chunks forwarded: 3900
+[2026-04-28T11:20:52.426Z] [DEEPGRAM] audio chunks forwarded: 4000
+[2026-04-28T11:20:53.226Z] [DEEPGRAM] audio chunks forwarded: 4100
+[2026-04-28T11:20:54.026Z] [DEEPGRAM] audio chunks forwarded: 4200
+[2026-04-28T11:20:54.103Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:20:54.103Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:20:54.837Z] [DEEPGRAM] audio chunks forwarded: 4300
+[2026-04-28T11:20:55.634Z] [DEEPGRAM] audio chunks forwarded: 4400
+[2026-04-28T11:20:55.832Z] [BEHAVIORAL_ANALYZE] input (22 words): "all of that with just the only manager. Oh, you are the only manager? Only manager. So because they are aggressively trying..."
+[2026-04-28T11:20:56.434Z] [DEEPGRAM] audio chunks forwarded: 4500
+[2026-04-28T11:20:57.235Z] [DEEPGRAM] audio chunks forwarded: 4600
+[2026-04-28T11:20:58.033Z] [DEEPGRAM] audio chunks forwarded: 4700
+[2026-04-28T11:20:58.834Z] [DEEPGRAM] audio chunks forwarded: 4800
+[2026-04-28T11:20:58.931Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:20:58.932Z] [BEHAVIORAL_ANALYZE] result: none
+[2026-04-28T11:20:59.634Z] [DEEPGRAM] audio chunks forwarded: 4900
+[2026-04-28T11:21:00.433Z] [DEEPGRAM] audio chunks forwarded: 5000
+[2026-04-28T11:21:01.283Z] [DEEPGRAM] audio chunks forwarded: 5100
+[2026-04-28T11:21:02.081Z] [DEEPGRAM] audio chunks forwarded: 5200
+[2026-04-28T11:21:02.882Z] [DEEPGRAM] audio chunks forwarded: 5300
+[2026-04-28T11:21:03.681Z] [DEEPGRAM] audio chunks forwarded: 5400
+[2026-04-28T11:21:04.600Z] [DEEPGRAM] audio chunks forwarded: 5500
+[2026-04-28T11:21:05.401Z] [DEEPGRAM] audio chunks forwarded: 5600
+[2026-04-28T11:21:06.200Z] [DEEPGRAM] audio chunks forwarded: 5700
+[2026-04-28T11:21:07.049Z] [DEEPGRAM] audio chunks forwarded: 5800
+[2026-04-28T11:21:07.859Z] [DEEPGRAM] audio chunks forwarded: 5900
+[2026-04-28T11:21:08.666Z] [DEEPGRAM] audio chunks forwarded: 6000
+[2026-04-28T11:21:09.465Z] [DEEPGRAM] audio chunks forwarded: 6100
+[2026-04-28T11:21:10.265Z] [DEEPGRAM] audio chunks forwarded: 6200
+[2026-04-28T11:21:11.081Z] [DEEPGRAM] audio chunks forwarded: 6300
+[2026-04-28T11:21:11.914Z] [DEEPGRAM] audio chunks forwarded: 6400
+[2026-04-28T11:21:12.715Z] [DEEPGRAM] audio chunks forwarded: 6500
+[2026-04-28T11:21:13.515Z] [DEEPGRAM] audio chunks forwarded: 6600
+[2026-04-28T11:21:14.244Z] [BEHAVIORAL_ANALYZE] input (35 words): "Only manager. So because they are aggressively trying You just need to find a way to make it so that means the next level has to be be equally, senior..."
+[2026-04-28T11:21:14.313Z] [DEEPGRAM] audio chunks forwarded: 6700
+[2026-04-28T11:21:15.113Z] [DEEPGRAM] audio chunks forwarded: 6800
+[2026-04-28T11:21:15.914Z] [DEEPGRAM] audio chunks forwarded: 6900
+[2026-04-28T11:21:16.713Z] [DEEPGRAM] audio chunks forwarded: 7000
+[2026-04-28T11:21:17.513Z] [DEEPGRAM] audio chunks forwarded: 7100
+[2026-04-28T11:21:18.033Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:21:18.033Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:21:18.340Z] [DEEPGRAM] audio chunks forwarded: 7200
+[2026-04-28T11:21:19.130Z] [DEEPGRAM] audio chunks forwarded: 7300
+[2026-04-28T11:21:19.932Z] [DEEPGRAM] audio chunks forwarded: 7400
+[2026-04-28T11:21:20.729Z] [DEEPGRAM] audio chunks forwarded: 7500
+[2026-04-28T11:21:21.530Z] [DEEPGRAM] audio chunks forwarded: 7600
+[2026-04-28T11:21:22.337Z] [DEEPGRAM] audio chunks forwarded: 7700
+[2026-04-28T11:21:23.145Z] [DEEPGRAM] audio chunks forwarded: 7800
+[2026-04-28T11:21:23.954Z] [DEEPGRAM] audio chunks forwarded: 7900
+[2026-04-28T11:21:24.755Z] [DEEPGRAM] audio chunks forwarded: 8000
+[2026-04-28T11:21:25.561Z] [DEEPGRAM] audio chunks forwarded: 8100
+[2026-04-28T11:21:25.789Z] [BEHAVIORAL_ANALYZE] input (31 words): "be equally, senior people you have to hire. Work. Sorry. What college graduate? Yeah. So then because they need a lot more one on one and mentoring an..."
+[2026-04-28T11:21:26.368Z] [DEEPGRAM] audio chunks forwarded: 8200
+[2026-04-28T11:21:27.162Z] [DEEPGRAM] audio chunks forwarded: 8300
+[2026-04-28T11:21:27.961Z] [DEEPGRAM] audio chunks forwarded: 8400
+[2026-04-28T11:21:28.773Z] [DEEPGRAM] audio chunks forwarded: 8500
+[2026-04-28T11:21:29.570Z] [DEEPGRAM] audio chunks forwarded: 8600
+[2026-04-28T11:21:30.379Z] [DEEPGRAM] audio chunks forwarded: 8700
+[2026-04-28T11:21:31.177Z] [DEEPGRAM] audio chunks forwarded: 8800
+[2026-04-28T11:21:31.985Z] [DEEPGRAM] audio chunks forwarded: 8900
+[2026-04-28T11:21:32.777Z] [DEEPGRAM] audio chunks forwarded: 9000
+[2026-04-28T11:21:33.578Z] [DEEPGRAM] audio chunks forwarded: 9100
+[2026-04-28T11:21:34.379Z] [DEEPGRAM] audio chunks forwarded: 9200
+[2026-04-28T11:21:35.178Z] [DEEPGRAM] audio chunks forwarded: 9300
+[2026-04-28T11:21:35.978Z] [DEEPGRAM] audio chunks forwarded: 9400
+[2026-04-28T11:21:36.778Z] [DEEPGRAM] audio chunks forwarded: 9500
+[2026-04-28T11:21:37.406Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:21:37.407Z] [BEHAVIORAL_ANALYZE] result: framework_detected → fw-high-performing-team [philosophy]
+[2026-04-28T11:21:37.409Z] [BEHAVIORAL_ANALYZE] question tracked: "What about college graduates?"
+[2026-04-28T11:21:37.428Z] [BEHAVIORAL_ANSWER] [philosophy] streaming for: "What about college graduates?..."
+[2026-04-28T11:21:37.432Z] [BEHAVIORAL_ANALYZE] input (50 words): "on one and mentoring and hand holding and with that size of team, don't have time. Yes. You just need to come up with a system that's gonna make sure ..."
+[2026-04-28T11:21:37.579Z] [DEEPGRAM] audio chunks forwarded: 9600
+[2026-04-28T11:21:38.377Z] [DEEPGRAM] audio chunks forwarded: 9700
+[2026-04-28T11:21:39.178Z] [DEEPGRAM] audio chunks forwarded: 9800
+[2026-04-28T11:21:39.977Z] [DEEPGRAM] audio chunks forwarded: 9900
+[2026-04-28T11:21:40.783Z] [DEEPGRAM] audio chunks forwarded: 10000
+[2026-04-28T11:21:41.592Z] [DEEPGRAM] audio chunks forwarded: 10100
+[2026-04-28T11:21:41.928Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:21:41.930Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:21:42.387Z] [DEEPGRAM] audio chunks forwarded: 10200
+[2026-04-28T11:21:43.185Z] [DEEPGRAM] audio chunks forwarded: 10300
+[2026-04-28T11:21:43.986Z] [DEEPGRAM] audio chunks forwarded: 10400
+[2026-04-28T11:21:44.786Z] [DEEPGRAM] audio chunks forwarded: 10500
+[2026-04-28T11:21:45.586Z] [DEEPGRAM] audio chunks forwarded: 10600
+[2026-04-28T11:21:45.745Z] [BEHAVIORAL_ANALYZE] input (32 words): "the way of And these systems always flex, sometimes we go more towards hierarchy, then it comes back to Always changing, improving based on what you'r..."
+[2026-04-28T11:21:46.393Z] [DEEPGRAM] audio chunks forwarded: 10700
+[2026-04-28T11:21:47.196Z] [DEEPGRAM] audio chunks forwarded: 10800
+[2026-04-28T11:21:47.994Z] [DEEPGRAM] audio chunks forwarded: 10900
+[2026-04-28T11:21:48.795Z] [DEEPGRAM] audio chunks forwarded: 11000
+[2026-04-28T11:21:49.593Z] [DEEPGRAM] audio chunks forwarded: 11100
+[2026-04-28T11:21:50.109Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:21:50.110Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:21:50.394Z] [DEEPGRAM] audio chunks forwarded: 11200
+[2026-04-28T11:21:51.194Z] [DEEPGRAM] audio chunks forwarded: 11300
+[2026-04-28T11:21:51.994Z] [DEEPGRAM] audio chunks forwarded: 11400
+[2026-04-28T11:21:52.794Z] [DEEPGRAM] audio chunks forwarded: 11500
+[2026-04-28T11:21:53.594Z] [DEEPGRAM] audio chunks forwarded: 11600
+[2026-04-28T11:21:54.395Z] [DEEPGRAM] audio chunks forwarded: 11700
+[2026-04-28T11:21:55.194Z] [DEEPGRAM] audio chunks forwarded: 11800
+[2026-04-28T11:21:55.694Z] [BEHAVIORAL_ANALYZE] input (32 words): "what you're seeing going on on the ground. So there's no I I think you asked me if I'm right or wrong. It's just, like, what's Okay. So let me start. ..."
+[2026-04-28T11:21:55.993Z] [DEEPGRAM] audio chunks forwarded: 11900
+[2026-04-28T11:21:56.794Z] [DEEPGRAM] audio chunks forwarded: 12000
+[2026-04-28T11:21:57.594Z] [DEEPGRAM] audio chunks forwarded: 12100
+[2026-04-28T11:21:58.394Z] [DEEPGRAM] audio chunks forwarded: 12200
+[2026-04-28T11:21:59.203Z] [DEEPGRAM] audio chunks forwarded: 12300
+[2026-04-28T11:21:59.524Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:21:59.525Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:22:00.014Z] [DEEPGRAM] audio chunks forwarded: 12400
+[2026-04-28T11:22:00.830Z] [DEEPGRAM] audio chunks forwarded: 12500
+[2026-04-28T11:22:01.626Z] [DEEPGRAM] audio chunks forwarded: 12600
+[2026-04-28T11:22:02.429Z] [DEEPGRAM] audio chunks forwarded: 12700
+[2026-04-28T11:22:03.226Z] [DEEPGRAM] audio chunks forwarded: 12800
+[2026-04-28T11:22:03.807Z] [BEHAVIORAL_ANALYZE] input (31 words): "like, what's Okay. So let me start. So your regimen kind of talks quite a bit about, like, a few things that catches my eye, the building, the Hyperco..."
+[2026-04-28T11:22:04.026Z] [DEEPGRAM] audio chunks forwarded: 12900
+[2026-04-28T11:22:04.866Z] [DEEPGRAM] audio chunks forwarded: 13000
+[2026-04-28T11:22:05.666Z] [DEEPGRAM] audio chunks forwarded: 13100
+[2026-04-28T11:22:06.466Z] [DEEPGRAM] audio chunks forwarded: 13200
+[2026-04-28T11:22:07.266Z] [DEEPGRAM] audio chunks forwarded: 13300
+[2026-04-28T11:22:08.066Z] [DEEPGRAM] audio chunks forwarded: 13400
+[2026-04-28T11:22:08.871Z] [DEEPGRAM] audio chunks forwarded: 13500
+[2026-04-28T11:22:09.674Z] [DEEPGRAM] audio chunks forwarded: 13600
+[2026-04-28T11:22:10.021Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:22:10.021Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:22:10.021Z] [BEHAVIORAL_ANALYZE] setup detected — waiting for actual question: "like, what's Okay. So let me start. So your regimen kind of talks quite a bit ab..."
+[2026-04-28T11:22:10.482Z] [DEEPGRAM] audio chunks forwarded: 13700
+[2026-04-28T11:22:11.219Z] [BEHAVIORAL_ANALYZE] input (20 words): "my eye, the building, the Hypercom team, actually. Okay. So, and by the way, so my interview will focus on..."
+[2026-04-28T11:22:11.283Z] [DEEPGRAM] audio chunks forwarded: 13800
+[2026-04-28T11:22:12.085Z] [DEEPGRAM] audio chunks forwarded: 13900
+[2026-04-28T11:22:12.891Z] [DEEPGRAM] audio chunks forwarded: 14000
+[2026-04-28T11:22:13.685Z] [DEEPGRAM] audio chunks forwarded: 14100
+[2026-04-28T11:22:14.485Z] [DEEPGRAM] audio chunks forwarded: 14200
+[2026-04-28T11:22:15.285Z] [DEEPGRAM] audio chunks forwarded: 14300
+[2026-04-28T11:22:16.083Z] [DEEPGRAM] audio chunks forwarded: 14400
+[2026-04-28T11:22:16.890Z] [DEEPGRAM] audio chunks forwarded: 14500
+[2026-04-28T11:22:17.706Z] [DEEPGRAM] audio chunks forwarded: 14600
+[2026-04-28T11:22:17.844Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:22:17.845Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:22:17.845Z] [BEHAVIORAL_ANALYZE] setup detected — waiting for actual question: "my eye, the building, the Hypercom team, actually. Okay. So, and by the way, so ..."
+[2026-04-28T11:22:18.506Z] [DEEPGRAM] audio chunks forwarded: 14700
+[2026-04-28T11:22:19.306Z] [DEEPGRAM] audio chunks forwarded: 14800
+[2026-04-28T11:22:20.106Z] [DEEPGRAM] audio chunks forwarded: 14900
+[2026-04-28T11:22:20.914Z] [DEEPGRAM] audio chunks forwarded: 15000
+[2026-04-28T11:22:21.730Z] [DEEPGRAM] audio chunks forwarded: 15100
+[2026-04-28T11:22:22.532Z] [DEEPGRAM] audio chunks forwarded: 15200
+[2026-04-28T11:22:22.723Z] [BEHAVIORAL_ANALYZE] input (44 words): "the way, so my interview will focus on leadership and people management aspects as well. Okay. Because maybe two of us will be talking. Everybody will..."
+[2026-04-28T11:22:23.332Z] [DEEPGRAM] audio chunks forwarded: 15300
+[2026-04-28T11:22:24.133Z] [DEEPGRAM] audio chunks forwarded: 15400
+[2026-04-28T11:22:24.937Z] [DEEPGRAM] audio chunks forwarded: 15500
+[2026-04-28T11:22:25.738Z] [DEEPGRAM] audio chunks forwarded: 15600
+[2026-04-28T11:22:26.545Z] [DEEPGRAM] audio chunks forwarded: 15700
+[2026-04-28T11:22:27.355Z] [DEEPGRAM] audio chunks forwarded: 15800
+[2026-04-28T11:22:28.162Z] [DEEPGRAM] audio chunks forwarded: 15900
+[2026-04-28T11:22:28.963Z] [DEEPGRAM] audio chunks forwarded: 16000
+[2026-04-28T11:22:29.705Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:22:29.705Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:22:29.705Z] [BEHAVIORAL_ANALYZE] setup detected — waiting for actual question: "the way, so my interview will focus on leadership and people management aspects ..."
+[2026-04-28T11:22:29.762Z] [DEEPGRAM] audio chunks forwarded: 16100
+[2026-04-28T11:22:30.570Z] [DEEPGRAM] audio chunks forwarded: 16200
+[2026-04-28T11:22:30.606Z] [BEHAVIORAL_ANALYZE] input (37 words): "give you the context that where I'm moving. You will see most of my question line of question coming out. Getting through more deeper into everything...."
+[2026-04-28T11:22:31.362Z] [DEEPGRAM] audio chunks forwarded: 16300
+[2026-04-28T11:22:32.163Z] [DEEPGRAM] audio chunks forwarded: 16400
+[2026-04-28T11:22:32.969Z] [DEEPGRAM] audio chunks forwarded: 16500
+[2026-04-28T11:22:33.770Z] [DEEPGRAM] audio chunks forwarded: 16600
+[2026-04-28T11:22:34.572Z] [DEEPGRAM] audio chunks forwarded: 16700
+[2026-04-28T11:22:34.876Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:22:34.878Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:22:34.878Z] [BEHAVIORAL_ANALYZE] setup detected — waiting for actual question: "give you the context that where I'm moving. You will see most of my question lin..."
+[2026-04-28T11:22:35.378Z] [DEEPGRAM] audio chunks forwarded: 16800
+[2026-04-28T11:22:36.170Z] [DEEPGRAM] audio chunks forwarded: 16900
+[2026-04-28T11:22:36.972Z] [DEEPGRAM] audio chunks forwarded: 17000
+[2026-04-28T11:22:37.772Z] [DEEPGRAM] audio chunks forwarded: 17100
+[2026-04-28T11:22:38.581Z] [DEEPGRAM] audio chunks forwarded: 17200
+[2026-04-28T11:22:38.953Z] [BEHAVIORAL_ANALYZE] input (37 words): "Makes a lot of sense. And then also, like, I've suffered this other side too many times. I'm answering your question, if you need more signals or you ..."
+[2026-04-28T11:22:39.383Z] [DEEPGRAM] audio chunks forwarded: 17300
+[2026-04-28T11:22:40.186Z] [DEEPGRAM] audio chunks forwarded: 17400
+[2026-04-28T11:22:40.985Z] [DEEPGRAM] audio chunks forwarded: 17500
+[2026-04-28T11:22:41.799Z] [DEEPGRAM] audio chunks forwarded: 17600
+[2026-04-28T11:22:42.594Z] [DEEPGRAM] audio chunks forwarded: 17700
+[2026-04-28T11:22:43.394Z] [DEEPGRAM] audio chunks forwarded: 17800
+[2026-04-28T11:22:44.202Z] [DEEPGRAM] audio chunks forwarded: 17900
+[2026-04-28T11:22:45.002Z] [DEEPGRAM] audio chunks forwarded: 18000
+[2026-04-28T11:22:45.652Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:22:45.653Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:22:45.654Z] [BEHAVIORAL_ANALYZE] setup detected — waiting for actual question: "Makes a lot of sense. And then also, like, I've suffered this other side too man..."
+[2026-04-28T11:22:45.810Z] [DEEPGRAM] audio chunks forwarded: 18100
+[2026-04-28T11:22:46.611Z] [DEEPGRAM] audio chunks forwarded: 18200
+[2026-04-28T11:22:47.411Z] [DEEPGRAM] audio chunks forwarded: 18300
+[2026-04-28T11:22:48.210Z] [DEEPGRAM] audio chunks forwarded: 18400
+[2026-04-28T11:22:48.601Z] [BEHAVIORAL_ANALYZE] input (40 words): "more direction or something, just let you know. Of course. Yeah. Cool. So my own definition of high performing team is a team that is has, number one,..."
+[2026-04-28T11:22:49.010Z] [DEEPGRAM] audio chunks forwarded: 18500
+[2026-04-28T11:22:49.812Z] [DEEPGRAM] audio chunks forwarded: 18600
+[2026-04-28T11:22:50.610Z] [DEEPGRAM] audio chunks forwarded: 18700
+[2026-04-28T11:22:51.409Z] [DEEPGRAM] audio chunks forwarded: 18800
+[2026-04-28T11:22:52.211Z] [DEEPGRAM] audio chunks forwarded: 18900
+[2026-04-28T11:22:53.021Z] [DEEPGRAM] audio chunks forwarded: 19000
+[2026-04-28T11:22:53.817Z] [DEEPGRAM] audio chunks forwarded: 19100
+[2026-04-28T11:22:54.622Z] [DEEPGRAM] audio chunks forwarded: 19200
+[2026-04-28T11:22:55.419Z] [DEEPGRAM] audio chunks forwarded: 19300
+[2026-04-28T11:22:56.223Z] [DEEPGRAM] audio chunks forwarded: 19400
+[2026-04-28T11:22:57.017Z] [DEEPGRAM] audio chunks forwarded: 19500
+[2026-04-28T11:22:57.814Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:22:57.815Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:22:57.830Z] [DEEPGRAM] audio chunks forwarded: 19600
+[2026-04-28T11:22:58.634Z] [DEEPGRAM] audio chunks forwarded: 19700
+[2026-04-28T11:22:59.434Z] [DEEPGRAM] audio chunks forwarded: 19800
+[2026-04-28T11:23:00.233Z] [DEEPGRAM] audio chunks forwarded: 19900
+[2026-04-28T11:23:01.042Z] [DEEPGRAM] audio chunks forwarded: 20000
+[2026-04-28T11:23:01.841Z] [DEEPGRAM] audio chunks forwarded: 20100
+[2026-04-28T11:23:02.247Z] [BEHAVIORAL_ANALYZE] input (34 words): "able to do what they need to do. Right? Be able to bring yourself full self to work. And, also, are able to, have the ability to deliver against your ..."
+[2026-04-28T11:23:02.641Z] [DEEPGRAM] audio chunks forwarded: 20200
+[2026-04-28T11:23:03.442Z] [DEEPGRAM] audio chunks forwarded: 20300
+[2026-04-28T11:23:04.244Z] [DEEPGRAM] audio chunks forwarded: 20400
+[2026-04-28T11:23:05.052Z] [DEEPGRAM] audio chunks forwarded: 20500
+[2026-04-28T11:23:05.850Z] [DEEPGRAM] audio chunks forwarded: 20600
+[2026-04-28T11:23:06.060Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:23:06.061Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:23:06.650Z] [DEEPGRAM] audio chunks forwarded: 20700
+[2026-04-28T11:23:07.457Z] [DEEPGRAM] audio chunks forwarded: 20800
+[2026-04-28T11:23:08.261Z] [DEEPGRAM] audio chunks forwarded: 20900
+[2026-04-28T11:23:09.064Z] [DEEPGRAM] audio chunks forwarded: 21000
+[2026-04-28T11:23:09.830Z] [BEHAVIORAL_ANALYZE] input (35 words): "to deliver against your organization's, goals and metrics. Yeah. Now for me, how do I measure an I high performance? Yeah. I don't measure high perfor..."
+[2026-04-28T11:23:09.858Z] [DEEPGRAM] audio chunks forwarded: 21100
+[2026-04-28T11:23:10.682Z] [DEEPGRAM] audio chunks forwarded: 21200
+[2026-04-28T11:23:11.484Z] [DEEPGRAM] audio chunks forwarded: 21300
+[2026-04-28T11:23:12.282Z] [DEEPGRAM] audio chunks forwarded: 21400
+[2026-04-28T11:23:13.090Z] [DEEPGRAM] audio chunks forwarded: 21500
+[2026-04-28T11:23:13.898Z] [DEEPGRAM] audio chunks forwarded: 21600
+[2026-04-28T11:23:14.491Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:23:14.491Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:23:14.697Z] [DEEPGRAM] audio chunks forwarded: 21700
+[2026-04-28T11:23:14.766Z] [BEHAVIORAL_ANALYZE] input (22 words): "on the number of code we we write. I mentioned I measure that we are high performing based on the number of..."
+[2026-04-28T11:23:15.498Z] [DEEPGRAM] audio chunks forwarded: 21800
+[2026-04-28T11:23:16.307Z] [DEEPGRAM] audio chunks forwarded: 21900
+[2026-04-28T11:23:17.102Z] [DEEPGRAM] audio chunks forwarded: 22000
+[2026-04-28T11:23:17.906Z] [DEEPGRAM] audio chunks forwarded: 22100
+[2026-04-28T11:23:18.723Z] [DEEPGRAM] audio chunks forwarded: 22200
+[2026-04-28T11:23:19.256Z] [BEHAVIORAL_ANALYZE] classified via Gemini
+[2026-04-28T11:23:19.258Z] [BEHAVIORAL_ANALYZE] result: candidate_answering
+[2026-04-28T11:23:19.511Z] [DEEPGRAM] audio chunks forwarded: 22300
+[2026-04-28T11:23:20.307Z] [DEEPGRAM] audio chunks forwarded: 22400
+[2026-04-28T11:23:21.114Z] [DEEPGRAM] audio chunks forwarded: 22500
+[2026-04-28T11:23:21.915Z] [DEEPGRAM] audio chunks forwarded: 22600
+[2026-04-28T11:23:22.721Z] [DEEPGRAM] audio chunks forwarded: 22700
+[2026-04-28T11:23:23.523Z] [DEEPGRAM] audio chunks forwarded: 22800
+[2026-04-28T11:23:24.322Z] [DEEPGRAM] audio chunks forwarded: 22900
+[2026-04-28T11:23:25.123Z] [DEEPGRAM] audio chunks forwarded: 23000
+[2026-04-28T11:23:25.922Z] [DEEPGRAM] audio chunks forwarded: 23100
+[2026-04-28T11:23:26.721Z] [DEEPGRAM] audio chunks forwarded: 23200
+[2026-04-28T11:23:27.522Z] [DEEPGRAM] audio chunks forwarded: 23300
+[2026-04-28T11:23:28.322Z] [DEEPGRAM] audio chunks forwarded: 23400
+[2026-04-28T11:23:29.122Z] [DEEPGRAM] audio chunks forwarded: 23500
+[2026-04-28T11:23:29.923Z] [DEEPGRAM] audio chunks forwarded: 23600
+[2026-04-28T11:23:30.721Z] [DEEPGRAM] audio chunks forwarded: 23700
+[2026-04-28T11:23:31.524Z] [DEEPGRAM] audio chunks forwarded: 23800
+[2026-04-28T11:23:32.322Z] [DEEPGRAM] audio chunks forwarded: 23900
+[2026-04-28T11:23:33.124Z] [DEEPGRAM] audio chunks forwarded: 24000
+[2026-04-28T11:23:33.921Z] [DEEPGRAM] audio chunks forwarded: 24100
+[2026-04-28T11:23:34.721Z] [DEEPGRAM] audio chunks forwarded: 24200
+[2026-04-28T11:23:35.531Z] [DEEPGRAM] audio chunks forwarded: 24300
+[2026-04-28T11:23:36.330Z] [DEEPGRAM] audio chunks forwarded: 24400
+[2026-04-28T11:23:37.132Z] [DEEPGRAM] audio chunks forwarded: 24500
+[2026-04-28T11:23:37.930Z] [DEEPGRAM] audio chunks forwarded: 24600
+[2026-04-28T11:23:38.731Z] [DEEPGRAM] audio chunks forwarded: 24700
+[2026-04-28T11:23:39.531Z] [DEEPGRAM] audio chunks forwarded: 24800
+[2026-04-28T11:23:40.330Z] [DEEPGRAM] audio chunks forwarded: 24900
+[2026-04-28T11:23:41.129Z] [DEEPGRAM] audio chunks forwarded: 25000
+[2026-04-28T11:23:41.931Z] [DEEPGRAM] audio chunks forwarded: 25100
+[2026-04-28T11:23:42.730Z] [DEEPGRAM] audio chunks forwarded: 25200
+[2026-04-28T11:23:43.531Z] [DEEPGRAM] audio chunks forwarded: 25300
+[2026-04-28T11:23:44.330Z] [DEEPGRAM] audio chunks forwarded: 25400
+[2026-04-28T11:23:45.130Z] [DEEPGRAM] audio chunks forwarded: 25500
+[2026-04-28T11:23:45.931Z] [DEEPGRAM] audio chunks forwarded: 25600
+[2026-04-28T11:23:46.733Z] [DEEPGRAM] audio chunks forwarded: 25700
+[2026-04-28T11:23:47.539Z] [DEEPGRAM] audio chunks forwarded: 25800
+[2026-04-28T11:23:48.338Z] [DEEPGRAM] audio chunks forwarded: 25900
+[2026-04-28T11:23:49.139Z] [DEEPGRAM] audio chunks forwarded: 26000
+[2026-04-28T11:23:49.938Z] [DEEPGRAM] audio chunks forwarded: 26100
+[2026-04-28T11:23:50.746Z] [DEEPGRAM] audio chunks forwarded: 26200
+[2026-04-28T11:23:51.547Z] [DEEPGRAM] audio chunks forwarded: 26300
+[2026-04-28T11:23:52.353Z] [DEEPGRAM] audio chunks forwarded: 26400
+[2026-04-28T11:23:53.154Z] [DEEPGRAM] audio chunks forwarded: 26500
+[2026-04-28T11:23:53.954Z] [DEEPGRAM] audio chunks forwarded: 26600
+[2026-04-28T11:23:54.755Z] [DEEPGRAM] audio chunks forwarded: 26700
+[2026-04-28T11:23:55.554Z] [DEEPGRAM] audio chunks forwarded: 26800
+[2026-04-28T11:23:56.361Z] [DEEPGRAM] audio chunks forwarded: 26900
+[2026-04-28T11:23:57.161Z] [DEEPGRAM] audio chunks forwarded: 27000
+[2026-04-28T11:23:57.971Z] [DEEPGRAM] audio chunks forwarded: 27100
+[2026-04-28T11:23:58.770Z] [DEEPGRAM] audio chunks forwarded: 27200
+[2026-04-28T11:23:59.569Z] [DEEPGRAM] audio chunks forwarded: 27300
+[2026-04-28T11:24:00.410Z] [DEEPGRAM] audio chunks forwarded: 27400
+[2026-04-28T11:24:01.210Z] [DEEPGRAM] audio chunks forwarded: 27500
+[2026-04-28T11:24:02.186Z] [DEEPGRAM] audio chunks forwarded: 27600
+[2026-04-28T11:24:02.985Z] [DEEPGRAM] audio chunks forwarded: 27700
+[2026-04-28T11:24:03.786Z] [DEEPGRAM] audio chunks forwarded: 27800
+[2026-04-28T11:24:04.594Z] [DEEPGRAM] audio chunks forwarded: 27900
+[2026-04-28T11:24:05.394Z] [DEEPGRAM] audio chunks forwarded: 28000
+[2026-04-28T11:24:06.194Z] [DEEPGRAM] audio chunks forwarded: 28100
+[2026-04-28T11:24:07.002Z] [DEEPGRAM] audio chunks forwarded: 28200
+[2026-04-28T11:24:07.821Z] [DEEPGRAM] audio chunks forwarded: 28300
+[2026-04-28T11:24:08.602Z] [DEEPGRAM] audio chunks forwarded: 28400
+[2026-04-28T11:24:09.402Z] [DEEPGRAM] audio chunks forwarded: 28500
+[2026-04-28T11:24:10.211Z] [DEEPGRAM] audio chunks forwarded: 28600
+[2026-04-28T11:24:11.018Z] [DEEPGRAM] audio chunks forwarded: 28700
+[2026-04-28T11:24:11.817Z] [DEEPGRAM] audio chunks forwarded: 28800
+[2026-04-28T11:24:12.634Z] [DEEPGRAM] audio chunks forwarded: 28900
+[2026-04-28T11:24:13.433Z] [DEEPGRAM] audio chunks forwarded: 29000
+[2026-04-28T11:24:14.234Z] [DEEPGRAM] audio chunks forwarded: 29100
+[2026-04-28T11:24:15.033Z] [DEEPGRAM] audio chunks forwarded: 29200
+[2026-04-28T11:24:15.835Z] [DEEPGRAM] audio chunks forwarded: 29300
+[2026-04-28T11:24:16.635Z] [DEEPGRAM] audio chunks forwarded: 29400
+[2026-04-28T11:24:17.443Z] [DEEPGRAM] audio chunks forwarded: 29500
+[2026-04-28T11:24:18.258Z] [DEEPGRAM] audio chunks forwarded: 29600
+[2026-04-28T11:24:19.060Z] [DEEPGRAM] audio chunks forwarded: 29700
+[2026-04-28T11:24:19.866Z] [DEEPGRAM] audio chunks forwarded: 29800
+[2026-04-28T11:24:20.667Z] [DEEPGRAM] audio chunks forwarded: 29900
+[2026-04-28T11:24:21.468Z] [DEEPGRAM] audio chunks forwarded: 30000
+[2026-04-28T11:24:22.266Z] [DEEPGRAM] audio chunks forwarded: 30100
+[2026-04-28T11:24:23.065Z] [DEEPGRAM] audio chunks forwarded: 30200
+[2026-04-28T11:24:23.865Z] [DEEPGRAM] audio chunks forwarded: 30300
+[2026-04-28T11:24:24.667Z] [DEEPGRAM] audio chunks forwarded: 30400
+[2026-04-28T11:24:25.475Z] [DEEPGRAM] audio chunks forwarded: 30500
+[2026-04-28T11:24:26.358Z] [DEEPGRAM] audio chunks forwarded: 30600
+[2026-04-28T11:24:27.155Z] [DEEPGRAM] audio chunks forwarded: 30700
+[2026-04-28T11:24:27.954Z] [DEEPGRAM] audio chunks forwarded: 30800
+[2026-04-28T11:24:28.755Z] [DEEPGRAM] audio chunks forwarded: 30900
+[2026-04-28T11:24:29.561Z] [DEEPGRAM] audio chunks forwarded: 31000
+[2026-04-28T11:24:30.367Z] [DEEPGRAM] audio chunks forwarded: 31100
+[2026-04-28T11:24:31.161Z] [DEEPGRAM] audio chunks forwarded: 31200
+[2026-04-28T11:24:31.978Z] [DEEPGRAM] audio chunks forwarded: 31300
+[2026-04-28T11:24:32.779Z] [DEEPGRAM] audio chunks forwarded: 31400
+[2026-04-28T11:24:33.579Z] [DEEPGRAM] audio chunks forwarded: 31500
+[2026-04-28T11:24:34.379Z] [DEEPGRAM] audio chunks forwarded: 31600
+[2026-04-28T11:24:35.178Z] [DEEPGRAM] audio chunks forwarded: 31700
+[2026-04-28T11:24:35.980Z] [DEEPGRAM] audio chunks forwarded: 31800
+[2026-04-28T11:24:36.778Z] [DEEPGRAM] audio chunks forwarded: 31900
+[2026-04-28T11:24:37.595Z] [DEEPGRAM] audio chunks forwarded: 32000
+[2026-04-28T11:24:38.394Z] [DEEPGRAM] audio chunks forwarded: 32100
+[2026-04-28T11:24:39.258Z] [DEEPGRAM] audio chunks forwarded: 32200
+[2026-04-28T11:24:40.058Z] [DEEPGRAM] audio chunks forwarded: 32300
+[2026-04-28T11:24:40.859Z] [DEEPGRAM] audio chunks forwarded: 32400
+[2026-04-28T11:24:41.665Z] [DEEPGRAM] audio chunks forwarded: 32500
+[2026-04-28T11:24:42.467Z] [DEEPGRAM] audio chunks forwarded: 32600
+[2026-04-28T11:24:43.266Z] [DEEPGRAM] audio chunks forwarded: 32700
+[2026-04-28T11:24:44.066Z] [DEEPGRAM] audio chunks forwarded: 32800
+[2026-04-28T11:24:44.867Z] [DEEPGRAM] audio chunks forwarded: 32900
+[2026-04-28T11:24:45.667Z] [DEEPGRAM] audio chunks forwarded: 33000
+[2026-04-28T11:24:46.474Z] [DEEPGRAM] audio chunks forwarded: 33100
+[2026-04-28T11:24:47.274Z] [DEEPGRAM] audio chunks forwarded: 33200
+[2026-04-28T11:24:48.075Z] [DEEPGRAM] audio chunks forwarded: 33300
+[2026-04-28T11:24:48.875Z] [DEEPGRAM] audio chunks forwarded: 33400
+[2026-04-28T11:24:49.675Z] [DEEPGRAM] audio chunks forwarded: 33500
+[2026-04-28T11:24:50.475Z] [DEEPGRAM] audio chunks forwarded: 33600
+[2026-04-28T11:24:51.275Z] [DEEPGRAM] audio chunks forwarded: 33700
+[2026-04-28T11:24:52.075Z] [DEEPGRAM] audio chunks forwarded: 33800
+[2026-04-28T11:24:52.874Z] [DEEPGRAM] audio chunks forwarded: 33900
+[2026-04-28T11:24:53.674Z] [DEEPGRAM] audio chunks forwarded: 34000
+[2026-04-28T11:24:54.474Z] [DEEPGRAM] audio chunks forwarded: 34100
+[2026-04-28T11:24:55.275Z] [DEEPGRAM] audio chunks forwarded: 34200
+[2026-04-28T11:24:56.079Z] [DEEPGRAM] audio chunks forwarded: 34300
+[2026-04-28T11:24:56.889Z] [DEEPGRAM] audio chunks forwarded: 34400
+[2026-04-28T11:24:57.693Z] [DEEPGRAM] audio chunks forwarded: 34500
+[2026-04-28T11:24:58.483Z] [DEEPGRAM] audio chunks forwarded: 34600
+[2026-04-28T11:24:59.284Z] [DEEPGRAM] audio chunks forwarded: 34700
+[2026-04-28T11:25:00.091Z] [DEEPGRAM] audio chunks forwarded: 34800
+[2026-04-28T11:25:00.898Z] [DEEPGRAM] audio chunks forwarded: 34900
+[2026-04-28T11:25:01.690Z] [DEEPGRAM] audio chunks forwarded: 35000
+[2026-04-28T11:25:02.498Z] [DEEPGRAM] audio chunks forwarded: 35100
+[2026-04-28T11:25:03.300Z] [DEEPGRAM] audio chunks forwarded: 35200
+[2026-04-28T11:25:04.097Z] [DEEPGRAM] audio chunks forwarded: 35300
+[2026-04-28T11:25:04.899Z] [DEEPGRAM] audio chunks forwarded: 35400
+[2026-04-28T11:25:05.700Z] [DEEPGRAM] audio chunks forwarded: 35500
+[2026-04-28T11:25:06.499Z] [DEEPGRAM] audio chunks forwarded: 35600
+[2026-04-28T11:25:07.297Z] [DEEPGRAM] audio chunks forwarded: 35700
+[2026-04-28T11:25:08.099Z] [DEEPGRAM] audio chunks forwarded: 35800
+[2026-04-28T11:25:08.900Z] [DEEPGRAM] audio chunks forwarded: 35900
+[2026-04-28T11:25:09.707Z] [DEEPGRAM] audio chunks forwarded: 36000
+[2026-04-28T11:25:10.505Z] [DEEPGRAM] audio chunks forwarded: 36100
+[2026-04-28T11:25:11.307Z] [DEEPGRAM] audio chunks forwarded: 36200
+[2026-04-28T11:25:12.106Z] [DEEPGRAM] audio chunks forwarded: 36300
+[2026-04-28T11:25:12.905Z] [DEEPGRAM] audio chunks forwarded: 36400
+[2026-04-28T11:25:13.714Z] [DEEPGRAM] audio chunks forwarded: 36500
+[2026-04-28T11:25:14.515Z] [DEEPGRAM] audio chunks forwarded: 36600
+[2026-04-28T11:25:15.315Z] [DEEPGRAM] audio chunks forwarded: 36700
+[2026-04-28T11:25:16.115Z] [DEEPGRAM] audio chunks forwarded: 36800
+[2026-04-28T11:25:16.915Z] [DEEPGRAM] audio chunks forwarded: 36900
+[2026-04-28T11:25:17.714Z] [DEEPGRAM] audio chunks forwarded: 37000
+[2026-04-28T11:25:18.515Z] [DEEPGRAM] audio chunks forwarded: 37100
+[2026-04-28T11:25:19.322Z] [DEEPGRAM] audio chunks forwarded: 37200
+[2026-04-28T11:25:20.122Z] [DEEPGRAM] audio chunks forwarded: 37300
+[2026-04-28T11:25:20.922Z] [DEEPGRAM] audio chunks forwarded: 37400
+[2026-04-28T11:25:21.722Z] [DEEPGRAM] audio chunks forwarded: 37500
+[2026-04-28T11:25:22.523Z] [DEEPGRAM] audio chunks forwarded: 37600
+[2026-04-28T11:25:23.324Z] [DEEPGRAM] audio chunks forwarded: 37700
+[2026-04-28T11:25:24.123Z] [DEEPGRAM] audio chunks forwarded: 37800
+[2026-04-28T11:25:24.923Z] [DEEPGRAM] audio chunks forwarded: 37900
+[2026-04-28T11:25:25.736Z] [DEEPGRAM] audio chunks forwarded: 38000
+[2026-04-28T11:25:26.531Z] [DEEPGRAM] audio chunks forwarded: 38100
+[2026-04-28T11:25:27.331Z] [DEEPGRAM] audio chunks forwarded: 38200
+[2026-04-28T11:25:28.132Z] [DEEPGRAM] audio chunks forwarded: 38300
+[2026-04-28T11:25:28.930Z] [DEEPGRAM] audio chunks forwarded: 38400
+[2026-04-28T11:25:29.730Z] [DEEPGRAM] audio chunks forwarded: 38500
+[2026-04-28T11:25:30.533Z] [DEEPGRAM] audio chunks forwarded: 38600
+[2026-04-28T11:25:31.342Z] [DEEPGRAM] audio chunks forwarded: 38700
+[2026-04-28T11:25:32.140Z] [DEEPGRAM] audio chunks forwarded: 38800
+[2026-04-28T11:25:32.939Z] [DEEPGRAM] audio chunks forwarded: 38900
+[2026-04-28T11:25:33.738Z] [DEEPGRAM] audio chunks forwarded: 39000
+[2026-04-28T11:25:34.540Z] [DEEPGRAM] audio chunks forwarded: 39100
+[2026-04-28T11:25:35.340Z] [DEEPGRAM] audio chunks forwarded: 39200
+[2026-04-28T11:25:36.139Z] [DEEPGRAM] audio chunks forwarded: 39300
+[2026-04-28T11:25:36.939Z] [DEEPGRAM] audio chunks forwarded: 39400
+[2026-04-28T11:25:37.738Z] [DEEPGRAM] audio chunks forwarded: 39500
+[2026-04-28T11:25:38.540Z] [DEEPGRAM] audio chunks forwarded: 39600
+[2026-04-28T11:25:39.340Z] [DEEPGRAM] audio chunks forwarded: 39700
+[2026-04-28T11:25:40.138Z] [DEEPGRAM] audio chunks forwarded: 39800
+[2026-04-28T11:25:40.939Z] [DEEPGRAM] audio chunks forwarded: 39900
+[2026-04-28T11:25:41.746Z] [DEEPGRAM] audio chunks forwarded: 40000
+[2026-04-28T11:25:42.547Z] [DEEPGRAM] audio chunks forwarded: 40100
+[2026-04-28T11:25:43.346Z] [DEEPGRAM] audio chunks forwarded: 40200
+ forwarded: 39900
+[2026-04-28T11:25:41.746Z] [DEEPGRAM] audio chunks forwarded: 40000
+[2026-04-28T11:25:42.547Z] [DEEPGRAM] audio chunks forwarded: 40100
+[2026-04-28T11:25:43.346Z] [DEEPGRAM] audio chunks forwarded: 40200

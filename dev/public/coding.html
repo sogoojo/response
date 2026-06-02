@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coding Interview Assistant</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#0a0a0f;color:#e8e6f0;font-family:-apple-system,system-ui,sans-serif}
+        .layout{display:flex;height:100vh}
+
+        .app-panel{flex:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid #2a2a3a}
+
+        .hdr{
+          padding:14px 20px;border-bottom:1px solid #2a2a3a;
+          display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+        }
+        .hdr-left{display:flex;align-items:center;gap:10px}
+        .dot{width:9px;height:9px;border-radius:50%;background:#8a87a0;transition:all .3s}
+        .dot.on{background:#00e676;box-shadow:0 0 8px rgba(0,230,118,.25)}
+        .dot.thinking{background:#ff9800;box-shadow:0 0 8px rgba(255,152,0,.25);animation:pulse 1s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+        .title{font-size:14px;font-weight:700;letter-spacing:1px}
+        .status{font-size:11px;color:#8a87a0;margin-left:8px}
+        .pattern-badge{
+          font-size:10px;color:#00bcd4;background:rgba(0,188,212,.1);
+          border:1px solid rgba(0,188,212,.3);border-radius:4px;padding:2px 8px;margin-left:8px;
+        }
+        .hdr-right{display:flex;gap:8px}
+        .btn{
+          background:#1a1a24;color:#e8e6f0;border:1px solid #2a2a3a;border-radius:8px;
+          padding:6px 14px;font-size:13px;cursor:pointer;
+        }
+        .btn.dim{color:#8a87a0}
+
+        .feed{flex:1;overflow-y:auto;padding:16px 16px 16px}
+        .empty{text-align:center;color:#8a87a0;margin-top:15vh;padding:0 32px}
+        .empty-icon{font-size:40px;margin-bottom:16px}
+        .empty-title{font-size:16px;margin-bottom:6px}
+        .empty-sub{font-size:13px;line-height:1.5}
+
+        .card{
+          background:#1a1a24;border:1px solid #2a2a3a;
+          border-radius:12px;padding:18px 20px;margin-bottom:12px;
+          transition:all .3s ease;
+        }
+        .card.problem{border-left:4px solid #00bcd4}
+        .card.approach{border-left:4px solid #6c5ce7}
+        .card.optimize{border-left:4px solid #ff9800}
+        .card.hint{border-left:4px solid #00e676}
+        .card.latest{
+          border-color:#00bcd4;background:#1e1e2a;
+          box-shadow:0 0 20px rgba(0,188,212,.15);
+        }
+        .card.latest.approach{border-color:#6c5ce7;box-shadow:0 0 20px rgba(108,92,231,.15)}
+        .card.latest.optimize{border-color:#ff9800;box-shadow:0 0 20px rgba(255,152,0,.15)}
+        .card.latest.hint{border-color:#00e676;box-shadow:0 0 20px rgba(0,230,118,.15)}
+
+        .card.collapsed{
+          padding:10px 16px;cursor:pointer;opacity:.5;
+        }
+        .card.collapsed .answer,
+        .card.collapsed .thinking,
+        .card.collapsed .timestamp{display:none}
+        .card.collapsed .card-question{
+          font-size:13px;margin-bottom:0;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+        }
+        .card.collapsed .card-label{margin-bottom:2px;font-size:9px}
+
+        .card .card-label{font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:6px}
+        .card .card-label.prob-label{color:#00bcd4}
+        .card .card-label.approach-label{color:#6c5ce7}
+        .card .card-label.opt-label{color:#ff9800}
+        .card .card-label.hint-label{color:#00e676}
+
+        .card .card-question{font-size:17px;color:#e8e6f0;font-weight:600;margin-bottom:12px;line-height:1.4}
+        .card .thinking{color:#8a87a0;font-size:14px;font-style:italic}
+        .card .answer{font-size:15px;line-height:1.8;color:#d0cfe0}
+        .card .answer strong{color:#fff;font-size:16px}
+        .card .answer ul{margin:4px 0 8px 16px}
+        .card .answer li{margin-bottom:4px}
+        .card .answer pre{
+          background:#12121a;border:1px solid #2a2a3a;border-radius:8px;
+          padding:12px 16px;overflow-x:auto;font-size:13px;line-height:1.5;
+          margin:8px 0;font-family:'JetBrains Mono',monospace;
+        }
+        .card .answer code{font-family:'JetBrains Mono',monospace;font-size:13px}
+        .card .timestamp{font-size:10px;color:#555;margin-top:10px}
+
+        .transcript-bar{
+          border-top:1px solid #2a2a3a;background:#13131a;flex-shrink:0;
+          max-height:120px;overflow-y:auto;
+        }
+        .transcript-inner{padding:12px 16px;font-size:12px;color:#8a87a0;line-height:1.6;word-wrap:break-word}
+        .transcript-inner .interim{color:#00bcd4;opacity:.7}
+
+        .mic-bar{
+          padding:12px;border-top:1px solid #2a2a3a;background:#0a0a0f;
+          display:flex;align-items:center;justify-content:center;gap:12px;flex-shrink:0;
+        }
+        .mic{
+          width:48px;height:48px;border-radius:50%;border:none;background:#00bcd4;
+          cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;
+        }
+        .mic.on{background:#ff5252}
+        .mic svg{fill:white}
+        .silence-bar{height:3px;width:120px;background:#2a2a3a;border-radius:2px;overflow:hidden}
+        .silence-fill{height:100%;background:#ff9800;width:0;transition:width .1s linear}
+
+        .debug-panel{width:380px;display:flex;flex-direction:column;flex-shrink:0}
+        .debug-hdr{
+          padding:14px 16px;border-bottom:1px solid #2a2a3a;
+          font-size:13px;font-weight:700;letter-spacing:1px;color:#8a87a0;
+          display:flex;justify-content:space-between;align-items:center;
+        }
+        .state-info{font-size:10px;color:#555;font-weight:400;letter-spacing:0}
+        .debug-tabs{display:flex;gap:0;border-bottom:1px solid #2a2a3a}
+        .debug-tab{
+          flex:1;padding:8px;text-align:center;font-size:12px;font-weight:600;
+          color:#8a87a0;cursor:pointer;border-bottom:2px solid transparent;
+        }
+        .debug-tab.active{color:#00bcd4;border-bottom-color:#00bcd4}
+        .debug-content{flex:1;overflow-y:auto;padding:12px}
+
+        .test-input{
+          width:100%;background:#1a1a24;border:1px solid #2a2a3a;border-radius:8px;
+          padding:10px 12px;color:#e8e6f0;font-size:13px;resize:vertical;
+          font-family:inherit;min-height:100px;
+        }
+        .test-input:focus{outline:none;border-color:#00bcd4}
+        .test-input::placeholder{color:#555}
+        .test-btn{
+          width:100%;background:#00bcd4;color:white;border:none;border-radius:8px;
+          padding:10px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;
+        }
+        .test-btn.secondary{background:#1a1a24;border:1px solid #2a2a3a;color:#e8e6f0}
+        .test-results{margin-top:12px}
+
+        .log-entry{
+          font-size:11px;font-family:monospace;padding:4px 0;
+          border-bottom:1px solid #1a1a24;line-height:1.5;color:#8a87a0;
+        }
+        .log-entry .tag{font-weight:700;margin-right:6px}
+        .log-entry .tag.voice{color:#00bcd4}
+        .log-entry .tag.analyze{color:#00e676}
+        .log-entry .tag.pattern{color:#6c5ce7}
+        .log-entry .tag.flush{color:#ff9800}
+        .log-entry .tag.api{color:#03a9f4}
+        .log-entry .tag.error{color:#ff5252}
+        .log-entry .tag.skip{color:#555}
+
+        .settings-row{
+          display:flex;align-items:center;justify-content:space-between;
+          padding:8px 0;border-bottom:1px solid #1a1a24;font-size:12px;
+        }
+        .settings-row label{color:#8a87a0}
+        .settings-row input[type=number]{
+          width:60px;background:#1a1a24;border:1px solid #2a2a3a;border-radius:4px;
+          color:#e8e6f0;padding:4px 6px;font-size:12px;text-align:center;
+        }
+        .settings-row span{color:#00bcd4;font-weight:600;min-width:35px;text-align:right}
+
+        .level-indicator{
+          display:flex;gap:4px;margin-top:8px;
+        }
+        .level-dot{
+          width:8px;height:8px;border-radius:50%;background:#2a2a3a;
+          transition:all .3s;
+        }
+        .level-dot.active{background:#00bcd4}
+        .level-dot.past{background:#6c5ce7}
+
+        ::-webkit-scrollbar{width:4px}
+        ::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:2px}
+        @media(max-width:800px){.debug-panel{display:none}}
+    </style>
+</head>
+<body>
+<div class="layout">
+    <div class="app-panel">
+        <div class="hdr">
+            <div class="hdr-left">
+                <div class="dot" id="dot"></div>
+                <span class="title">CODING ASSIST</span>
+                <span class="status" id="statusText"></span>
+                <span class="pattern-badge" id="patternBadge" style="display:none"></span>
+                <span class="pattern-badge" id="speechBadge" style="margin-left:4px"></span>
+            </div>
+            <div class="hdr-right">
+                <button class="btn dim" onclick="clearAll()">Clear</button>
+            </div>
+        </div>
+
+        <div class="feed" id="feed">
+            <div class="empty" id="emptyState">
+                <div class="empty-icon">&#x1F4BB;</div>
+                <div class="empty-title">Coding Interview Assistant</div>
+                <div class="empty-sub">Tap mic to start. Detects problem patterns, provides approaches with Java code, and optimizes when the interviewer pushes for better solutions.</div>
+            </div>
+        </div>
+
+        <div class="transcript-bar" id="tbar">
+            <div class="transcript-inner" id="ttext"></div>
+        </div>
+
+        <div class="mic-bar">
+            <div class="silence-bar" id="silenceBar" style="visibility:hidden">
+                <div class="silence-fill" id="silenceFill"></div>
+            </div>
+            <button class="mic" id="micBtn" onclick="toggleMic()">
+                <svg id="micIcon" width="22" height="22" viewBox="0 0 24 24">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <line x1="12" y1="19" x2="12" y2="23" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <div class="silence-bar" style="visibility:hidden"><div class="silence-fill"></div></div>
+        </div>
+    </div>
+
+    <div class="debug-panel">
+        <div class="debug-hdr">
+            <span>DEBUG</span>
+            <span class="state-info" id="stateInfo">pattern: none | level: 0</span>
+        </div>
+        <div class="debug-tabs">
+            <div class="debug-tab active" onclick="switchTab('test')" id="tabTest">Test</div>
+            <div class="debug-tab" onclick="switchTab('log')" id="tabLog">Log</div>
+            <div class="debug-tab" onclick="switchTab('settings')" id="tabSettings">Settings</div>
+        </div>
+        <div class="debug-content" id="debugContent">
+            <div id="testPanel">
+                <textarea class="test-input" id="testInput" placeholder="Paste interview speech to test coding analysis..."></textarea>
+                <button class="test-btn" onclick="runAnalyzeTest()">Analyze Speech</button>
+                <button class="test-btn secondary" onclick="runAnalyzeAndAnswer()">Analyze + Answer</button>
+                <div class="test-results" id="testResults"></div>
+            </div>
+            <div id="logPanel" style="display:none"></div>
+            <div id="settingsPanel" style="display:none">
+                <div class="settings-row">
+                    <label>Silence threshold</label>
+                    <input type="number" id="silenceMs" value="3000" min="1000" max="10000" step="500">
+                    <span>ms</span>
+                </div>
+                <div class="settings-row">
+                    <label>Min words before analyze</label>
+                    <input type="number" id="minWords" value="10" min="2" max="50">
+                </div>
+                <div class="settings-row">
+                    <label>Rolling check interval</label>
+                    <input type="number" id="rollingMs" value="45" min="15" max="120">
+                    <span>sec</span>
+                </div>
+                <div style="margin-top:16px;font-size:11px;color:#555;line-height:1.6">
+                    <strong style="color:#8a87a0">How it works:</strong><br>
+                    Speech accumulates. On silence, it's sent to analyze the coding problem. The system detects the pattern (two pointers, sliding window, etc.), provides an approach with Java code, and when the interviewer asks to optimize, shows the next level.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let listening = false, recognition = null;
+    let fullTranscript = "";
+    let pendingBuffer = "";
+    let lastSpeechTime = 0;
+    let silenceTimer = null;
+    let silenceAnimFrame = null;
+    let rollingTimer = null;
+    let analyzing = false;
+    let cards = [];
+    let currentPattern = "";
+    let currentLevel = 0;
+    let problemDetected = "";
+    let lastChunkTail = "";
+
+    const speechMode = new URLSearchParams(window.location.search).get("speech") || "browser";
+    const DG_FLUSH_MIN = 25;
+    let dgSocket = null;
+    let dgMediaStream = null;
+    let dgAudioContext = null;
+    let dgProcessor = null;
+
+    const $feed = document.getElementById("feed");
+    const $dot = document.getElementById("dot");
+    const $micBtn = document.getElementById("micBtn");
+    const $micIcon = document.getElementById("micIcon");
+    const $tbar = document.getElementById("tbar");
+    const $ttext = document.getElementById("ttext");
+    const $empty = document.getElementById("emptyState");
+    const $status = document.getElementById("statusText");
+    const $patternBadge = document.getElementById("patternBadge");
+    const $silenceBar = document.getElementById("silenceBar");
+    const $silenceFill = document.getElementById("silenceFill");
+    const $logPanel = document.getElementById("logPanel");
+    const $stateInfo = document.getElementById("stateInfo");
+
+    const MIC_SVG = `<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="23" stroke="white" stroke-width="2" stroke-linecap="round"/>`;
+    const STOP_SVG = `<rect x="6" y="6" width="12" height="12" rx="2" fill="white"/>`;
+
+    function getSilenceMs() { return parseInt(document.getElementById("silenceMs").value) || 3000; }
+    function getMinWords() { return parseInt(document.getElementById("minWords").value) || 10; }
+    function getRollingMs() { return (parseInt(document.getElementById("rollingMs").value) || 45) * 1000; }
+
+    function devLog(tag, msg) {
+      console.log(`[${tag}]`, msg);
+      const el = document.createElement("div");
+      el.className = "log-entry";
+      el.innerHTML = `<span class="tag ${tag.toLowerCase()}">[${tag}]</span>${escHtml(typeof msg === "string" ? msg : JSON.stringify(msg))}`;
+      $logPanel.prepend(el);
+      if ($logPanel.children.length > 300) $logPanel.lastChild.remove();
+    }
+
+    function updateStateDisplay() {
+      $stateInfo.textContent = `pattern: ${currentPattern || "none"} | level: ${currentLevel}`;
+      if (currentPattern) {
+        $patternBadge.textContent = currentPattern;
+        $patternBadge.style.display = "inline";
+      } else {
+        $patternBadge.style.display = "none";
+      }
+    }
+
+    // ============ SPEECH ============
+    function initRecognition() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return null;
+      const rec = new SR();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = "en-US";
+
+      rec.onresult = function (e) {
+        let interimText = "", finalText = "";
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = e.results[i][0].transcript;
+          if (e.results[i].isFinal) finalText += t + " ";
+          else interimText += t;
+        }
+
+        $ttext.innerHTML = escHtml(fullTranscript.slice(-200) + " " + pendingBuffer + " " + finalText) +
+          (interimText ? '<span class="interim"> ' + escHtml(interimText) + "</span>" : "");
+        $tbar.scrollTop = $tbar.scrollHeight;
+
+        if (!finalText.trim()) return;
+
+        const chunk = finalText.trim();
+        pendingBuffer += " " + chunk;
+        lastSpeechTime = Date.now();
+
+        devLog("VOICE", chunk);
+
+        clearTimeout(silenceTimer);
+        startSilenceAnimation();
+
+        silenceTimer = setTimeout(() => {
+          onAnalyze("silence");
+        }, getSilenceMs());
+
+        if (!rollingTimer) {
+          rollingTimer = setTimeout(() => {
+            rollingTimer = null;
+            if (pendingBuffer.trim() && pendingBuffer.trim().split(/\s+/).length >= 15) {
+              devLog("FLUSH", `rolling ${getRollingMs()/1000}s check (${pendingBuffer.trim().split(/\s+/).length} words)`);
+              onAnalyze("rolling");
+            }
+          }, getRollingMs());
+        }
+      };
+
+      rec.onerror = function (e) {
+        devLog("ERROR", e.error);
+        if (e.error === "not-allowed") { listening = false; updateUI(); return; }
+        if (listening) setTimeout(() => { try { rec.start() } catch (_) {} }, 500);
+      };
+
+      rec.onend = function () {
+        if (listening) setTimeout(() => { try { rec.start() } catch (_) {} }, 200);
+      };
+
+      return rec;
+    }
+
+    function startSilenceAnimation() {
+      $silenceBar.style.visibility = "visible";
+      cancelAnimationFrame(silenceAnimFrame);
+      const silenceMs = getSilenceMs();
+      function animate() {
+        if (!listening) { $silenceFill.style.width = "0"; return; }
+        const elapsed = Date.now() - lastSpeechTime;
+        const pct = Math.min(elapsed / silenceMs * 100, 100);
+        $silenceFill.style.width = pct + "%";
+        if (pct < 100) silenceAnimFrame = requestAnimationFrame(animate);
+      }
+      animate();
+    }
+
+    // ============ DEEPGRAM ============
+    async function startDeepgram() {
+      try {
+        dgMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (e) {
+        alert("Microphone access denied");
+        listening = false;
+        updateUI();
+        return;
+      }
+
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      dgSocket = new WebSocket(`${wsProtocol}//${window.location.host}/ws/deepgram`);
+
+      dgSocket.onopen = () => {
+        devLog("DEEPGRAM", "WebSocket connected, waiting for Deepgram...");
+      };
+
+      dgSocket.onmessage = (evt) => {
+        const msg = JSON.parse(evt.data);
+
+        if (msg.type === "ready") {
+          devLog("DEEPGRAM", "Deepgram ready — starting audio capture");
+          startAudioCapture();
+          setStatus("listening (deepgram)...");
+        }
+
+        if (msg.type === "transcript") {
+          const { transcript, isFinal } = msg;
+          if (!transcript) return;
+
+          if (isFinal) {
+            pendingBuffer += " " + transcript;
+            lastSpeechTime = Date.now();
+            devLog("VOICE_DG", transcript);
+
+            $ttext.innerHTML =
+              escHtml(fullTranscript.slice(-200) + " " + pendingBuffer) +
+              '<span class="interim"></span>';
+            $tbar.scrollTop = $tbar.scrollHeight;
+
+            clearTimeout(silenceTimer);
+            startSilenceAnimation();
+            silenceTimer = setTimeout(() => onAnalyze("silence"), getSilenceMs());
+
+            if (!rollingTimer) {
+              rollingTimer = setTimeout(() => {
+                rollingTimer = null;
+                if (pendingBuffer.trim() && pendingBuffer.trim().split(/\s+/).length >= DG_FLUSH_MIN) {
+                  devLog("FLUSH", `rolling check (${pendingBuffer.trim().split(/\s+/).length} words)`);
+                  onAnalyze("rolling");
+                }
+              }, getRollingMs());
+            }
+          } else {
+            $ttext.innerHTML =
+              escHtml(fullTranscript.slice(-200) + " " + pendingBuffer) +
+              '<span class="interim"> ' + escHtml(transcript) + "</span>";
+            $tbar.scrollTop = $tbar.scrollHeight;
+          }
+        }
+
+        if (msg.type === "utterance_end") {
+          const wc = pendingBuffer.trim() ? pendingBuffer.trim().split(/\s+/).length : 0;
+          if (wc >= DG_FLUSH_MIN) {
+            devLog("FLUSH", `utterance end (${wc} words)`);
+            onAnalyze("utterance_end");
+          }
+        }
+
+        if (msg.error) {
+          devLog("ERROR", `Deepgram: ${msg.error || msg.message}`);
+        }
+      };
+
+      dgSocket.onclose = () => {
+        devLog("DEEPGRAM", "WebSocket closed");
+        if (listening) {
+          setTimeout(() => { if (listening) startDeepgram(); }, 1000);
+        }
+      };
+
+      dgSocket.onerror = () => {
+        devLog("ERROR", "Deepgram WebSocket error");
+      };
+    }
+
+    async function startAudioCapture() {
+      dgAudioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+      const source = dgAudioContext.createMediaStreamSource(dgMediaStream);
+
+      try {
+        const workletCode = `
+          class PCMProcessor extends AudioWorkletProcessor {
+            process(inputs) {
+              const input = inputs[0];
+              if (input.length > 0) {
+                const float32 = input[0];
+                const pcm16 = new Int16Array(float32.length);
+                for (let i = 0; i < float32.length; i++) {
+                  const s = Math.max(-1, Math.min(1, float32[i]));
+                  pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                }
+                this.port.postMessage(pcm16.buffer, [pcm16.buffer]);
+              }
+              return true;
+            }
+          }
+          registerProcessor('pcm-processor', PCMProcessor);
+        `;
+        const blob = new Blob([workletCode], { type: "application/javascript" });
+        const blobUrl = URL.createObjectURL(blob);
+        await dgAudioContext.audioWorklet.addModule(blobUrl);
+        URL.revokeObjectURL(blobUrl);
+
+        const workletNode = new AudioWorkletNode(dgAudioContext, "pcm-processor");
+        workletNode.port.onmessage = (e) => {
+          if (!listening || !dgSocket || dgSocket.readyState !== WebSocket.OPEN) return;
+          dgSocket.send(e.data);
+        };
+        source.connect(workletNode);
+        workletNode.connect(dgAudioContext.destination);
+        dgProcessor = workletNode;
+        devLog("DEEPGRAM", "audio capture started (AudioWorklet)");
+      } catch (e) {
+        devLog("DEEPGRAM", `AudioWorklet failed, using ScriptProcessor: ${e.message}`);
+        dgProcessor = dgAudioContext.createScriptProcessor(4096, 1, 1);
+        dgProcessor.onaudioprocess = (ev) => {
+          if (!listening || !dgSocket || dgSocket.readyState !== WebSocket.OPEN) return;
+          const inputData = ev.inputBuffer.getChannelData(0);
+          const pcm16 = new Int16Array(inputData.length);
+          for (let i = 0; i < inputData.length; i++) {
+            const s = Math.max(-1, Math.min(1, inputData[i]));
+            pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          }
+          dgSocket.send(pcm16.buffer);
+        };
+        source.connect(dgProcessor);
+        dgProcessor.connect(dgAudioContext.destination);
+        devLog("DEEPGRAM", "audio capture started (ScriptProcessor)");
+      }
+    }
+
+    function stopDeepgram() {
+      if (dgProcessor) { dgProcessor.disconnect(); dgProcessor = null; }
+      if (dgAudioContext) { dgAudioContext.close(); dgAudioContext = null; }
+      if (dgMediaStream) { dgMediaStream.getTracks().forEach(t => t.stop()); dgMediaStream = null; }
+      if (dgSocket && dgSocket.readyState === WebSocket.OPEN) { dgSocket.close(); dgSocket = null; }
+    }
+
+    // ============ ANALYZE ============
+    async function onAnalyze(trigger) {
+      const buffer = pendingBuffer.trim();
+      if (!buffer) return;
+      if (buffer.split(/\s+/).length < getMinWords()) {
+        devLog("SKIP", `too short (${buffer.split(/\s+/).length} words): "${buffer}"`);
+        if (trigger !== "rolling") {
+          fullTranscript += " " + buffer;
+          pendingBuffer = "";
+        }
+        return;
+      }
+
+      if (analyzing) { devLog("SKIP", "already analyzing"); return; }
+      analyzing = true;
+      setStatus("analyzing...");
+      $dot.className = "dot thinking";
+
+      fullTranscript += " " + buffer;
+      const speechToSend = lastChunkTail ? (lastChunkTail + " " + buffer) : buffer;
+      const words = buffer.split(/\s+/);
+      lastChunkTail = words.slice(-8).join(" ");
+      pendingBuffer = "";
+
+      devLog("ANALYZE", `sending (${speechToSend.split(/\s+/).length} words, overlap: ${lastChunkTail.split(/\s+/).length}): "${speechToSend.slice(0, 100)}..."`);
+
+      try {
+        const resp = await fetch("/api/coding/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            recentSpeech: speechToSend,
+            fullContext: fullTranscript.slice(-3000),
+            currentPattern,
+            currentLevel,
+            problemDetected
+          }),
+        });
+        const data = await resp.json();
+        devLog("ANALYZE", `result: ${JSON.stringify(data)}`);
+
+        if (data.pattern) {
+          currentPattern = data.pattern;
+        }
+        if (data.level !== undefined) {
+          currentLevel = data.level;
+        }
+        if (data.problem) {
+          problemDetected = data.problem;
+        }
+        updateStateDisplay();
+
+        if (data.action === "problem_detected") {
+          addCard("problem", data.problem, data);
+          getAnswer(data.problem, "problem", data);
+        } else if (data.action === "optimize") {
+          addCard("optimize", "Optimize: " + (data.problem || problemDetected), data);
+          getAnswer(data.problem || problemDetected, "optimize", data);
+        } else if (data.action === "hint") {
+          addCard("hint", data.hint || "Hint", data);
+          getAnswer(data.hint || problemDetected, "hint", data);
+        } else if (data.action === "approach") {
+          addCard("approach", data.problem || problemDetected, data);
+          getAnswer(data.problem || problemDetected, "approach", data);
+        }
+
+        setStatus("");
+      } catch (e) {
+        devLog("ERROR", `analyze failed: ${e.message}`);
+        setStatus("error");
+      }
+      analyzing = false;
+      $dot.className = listening ? "dot on" : "dot";
+    }
+
+    // ============ ANSWER ============
+    async function getAnswer(question, type, analyzeData) {
+      const cardEl = cards[cards.length - 1]?.el;
+      if (!cardEl) return;
+
+      const answerDiv = cardEl.querySelector(".answer");
+      const thinkingDiv = cardEl.querySelector(".thinking");
+      if (thinkingDiv) thinkingDiv.textContent = "generating...";
+
+      try {
+        const resp = await fetch("/api/coding/answer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question,
+            type,
+            context: fullTranscript.slice(-2000),
+            pattern: currentPattern,
+            level: currentLevel,
+            analyzeData
+          }),
+        });
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n");
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const raw = line.slice(6).trim();
+            if (raw === "[DONE]") continue;
+            try {
+              const evt = JSON.parse(raw);
+              if (evt.text) {
+                fullText += evt.text;
+                if (thinkingDiv) thinkingDiv.style.display = "none";
+                answerDiv.innerHTML = renderMarkdown(fullText);
+              }
+              if (evt.done) {
+                answerDiv.innerHTML = renderMarkdown(fullText);
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (e) {
+        devLog("ERROR", `answer failed: ${e.message}`);
+        if (answerDiv) answerDiv.innerHTML = `<em style="color:#ff5252">Error: ${escHtml(e.message)}</em>`;
+      }
+    }
+
+    // ============ UI ============
+    function addCard(type, title, data) {
+      $empty.style.display = "none";
+
+      // Collapse previous latest card
+      for (const c of cards) {
+        c.el.classList.remove("latest");
+        c.el.classList.add("collapsed");
+      }
+
+      const cardType = type === "problem" ? "problem" :
+                       type === "optimize" ? "optimize" :
+                       type === "hint" ? "hint" : "approach";
+
+      const labelClass = type === "problem" ? "prob-label" :
+                         type === "optimize" ? "opt-label" :
+                         type === "hint" ? "hint-label" : "approach-label";
+
+      const labelText = type === "problem" ? "PROBLEM DETECTED" :
+                        type === "optimize" ? "OPTIMIZATION" :
+                        type === "hint" ? "HINT" : "APPROACH";
+
+      const el = document.createElement("div");
+      el.className = `card ${cardType} latest`;
+      el.innerHTML = `
+        <div class="card-label ${labelClass}">${labelText}${data.pattern ? ` — ${data.pattern}` : ""}</div>
+        <div class="card-question">${escHtml(title)}</div>
+        <div class="thinking">thinking...</div>
+        <div class="answer"></div>
+        ${currentLevel > 0 ? `<div class="level-indicator">${levelDots(currentLevel, data.totalLevels || 3)}</div>` : ""}
+        <div class="timestamp">${new Date().toLocaleTimeString()}</div>
+      `;
+      el.addEventListener("click", () => {
+        if (el.classList.contains("collapsed")) {
+          el.classList.remove("collapsed");
+        }
+      });
+
+      $feed.appendChild(el);
+      $feed.scrollTop = $feed.scrollHeight;
+
+      cards.push({ type, title, el, data });
+    }
+
+    function levelDots(current, total) {
+      let html = "";
+      for (let i = 0; i < total; i++) {
+        const cls = i < current ? "past" : i === current ? "active" : "";
+        html += `<div class="level-dot ${cls}"></div>`;
+      }
+      return html;
+    }
+
+    function renderMarkdown(text) {
+      let html = text
+        .replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code>${escHtml(code.trim())}</code></pre>`)
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/^\- (.+)/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+        .replace(/\n/g, '<br>');
+      return html;
+    }
+
+    function escHtml(s) {
+      return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function setStatus(s) {
+      $status.textContent = s;
+    }
+
+    function updateUI() {
+      $micBtn.className = listening ? "mic on" : "mic";
+      $micIcon.innerHTML = listening ? STOP_SVG : MIC_SVG;
+      $dot.className = listening ? "dot on" : "dot";
+      if (!listening) {
+        $silenceBar.style.visibility = "hidden";
+        $silenceFill.style.width = "0";
+      }
+    }
+
+    function toggleMic() {
+      listening = !listening;
+      if (listening) {
+        if (speechMode === "deepgram") {
+          startDeepgram();
+        } else {
+          if (!recognition) recognition = initRecognition();
+          if (!recognition) { alert("Speech recognition not supported. Try ?speech=deepgram"); listening = false; return; }
+          recognition.start();
+          setStatus("listening...");
+        }
+      } else {
+        if (speechMode === "deepgram") {
+          stopDeepgram();
+        } else if (recognition) {
+          recognition.stop();
+        }
+        clearTimeout(silenceTimer);
+        clearTimeout(rollingTimer);
+        rollingTimer = null;
+        setStatus("");
+      }
+      updateUI();
+    }
+
+    function clearAll() {
+      cards = [];
+      currentPattern = "";
+      currentLevel = 0;
+      problemDetected = "";
+      fullTranscript = "";
+      pendingBuffer = "";
+      lastChunkTail = "";
+      $feed.innerHTML = `<div class="empty" id="emptyState">
+        <div class="empty-icon">&#x1F4BB;</div>
+        <div class="empty-title">Coding Interview Assistant</div>
+        <div class="empty-sub">Tap mic to start. Detects problem patterns, provides approaches with Java code, and optimizes when the interviewer pushes for better solutions.</div>
+      </div>`;
+      updateStateDisplay();
+      fetch("/api/coding/reset", { method: "POST" }).catch(() => {});
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll(".debug-tab").forEach(t => t.classList.remove("active"));
+      document.getElementById("tab" + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add("active");
+      document.getElementById("testPanel").style.display = tab === "test" ? "" : "none";
+      document.getElementById("logPanel").style.display = tab === "log" ? "" : "none";
+      document.getElementById("settingsPanel").style.display = tab === "settings" ? "" : "none";
+    }
+
+    async function runAnalyzeTest() {
+      const text = document.getElementById("testInput").value.trim();
+      if (!text) return;
+      pendingBuffer = text;
+      await onAnalyze("test");
+    }
+
+    async function runAnalyzeAndAnswer() {
+      const text = document.getElementById("testInput").value.trim();
+      if (!text) return;
+      pendingBuffer = text;
+      await onAnalyze("test");
+    }
+
+    updateStateDisplay();
+    document.getElementById("speechBadge").textContent = speechMode === "deepgram" ? "DEEPGRAM" : "BROWSER";
+    if (speechMode === "deepgram") document.getElementById("speechBadge").style.color = "#4fc3f7";
+</script>
+</body>
+</html>
