@@ -1,0 +1,458 @@
+{
+  "track": "Case Studies",
+  "order": 2,
+  "generatedAt": "2026-06-10",
+  "description": "Study digests of the numbers-rich 'how X built Y' PDFs. Each digest replaces reading the PDF; open the source only for shaky topics. quotableNumbers double as the live-citation bank.",
+  "digests": [
+    {
+      "id": "cloudflare-trillion-message-kafka",
+      "title": "Cloudflare's Trillion-Message Kafka Infrastructure",
+      "company": "Cloudflare",
+      "group": "Messaging & Streaming",
+      "pdfFile": "harvest/ByteByteGo/Cloudflare’s Trillion-Message Kafka Infrastructure_ A Deep Dive.pdf",
+      "tldr": "Cloudflare scaled Kafka from a tool for breaking up a monolithic PHP app into a platform that has processed 1 trillion messages, running 14 clusters with ~330 nodes across data centers. The story is less about raw throughput and more about the platform abstractions — schema contracts, a Go client library, a connector framework, and smart health checks — that let hundreds of teams use Kafka safely.",
+      "bullets": [
+        "Started with a **monolithic PHP application**; adopted Kafka to get **loose coupling** (producers emit to topics without knowing consumers, e.g., many teams feeding one audit-log consumer) and to make **retry mechanisms** possible.",
+        "Built a **general-purpose message bus cluster** where onboarding is a **pull request** that auto-provisions topics with replication strategy, retention period, and **ACLs** — platform self-service instead of tickets.",
+        "Enforced message contracts with **Protobuf + a schema registry**, giving forward/backward compatibility via schema evolution plus smaller payloads than JSON; they made the controversial call of a **strict one-to-one mapping between Protobuf message type and topic** — more topics/partitions/replicas and worse resource utilization, accepted in exchange for better developer experience, lower coupling, and reliability.",
+        "Shipped an opinionated internal **message bus client library in Go** with best-practice defaults baked in, and a **connector framework** (inspired by Kafka Connect) where a CLI generates reader/transform/writer services configured almost entirely via **environment variables**.",
+        "When pandemic-era audit-log volume caused SLO breaches, they fixed it through **visibility first**: Prometheus **histograms per pipeline step** and OpenTelemetry in the SDK revealed that both Kafka reads and bucket pushes were slow; targeted fixes restored on-time delivery at **250-500 messages/sec** to customer buckets.",
+        "Killed noisy on-call with Kubernetes **liveness probes** that do a real broker operation (list topics), then added **smart health checks for stuck consumers**: compare **committed offset vs current offset** each check — if committed offset hasn't advanced while messages exist, the consumer is stuck and the pod is auto-restarted.",
+        "Fixed the lagging transactional email system by switching from one-message-at-a-time to **batch consumption** (configurable batch size per poll, bulk DB inserts, parallel email dispatch), which survived a major product-launch signup surge."
+      ],
+      "decisionRule": "At platform scale, Kafka problems are organizational problems: enforce contracts (Protobuf + schema registry), bake best practices into one client library, and instrument every pipeline step — visibility is the prerequisite to fixing any throughput problem.",
+      "quotableNumbers": [
+        {"number": "1 trillion", "context": "cumulative Kafka messages processed milestone"},
+        {"number": "14 clusters / ~330 nodes", "context": "Kafka footprint across multiple data centers"},
+        {"number": "since 2014", "context": "Kafka in production at Cloudflare"},
+        {"number": "250-500 msg/sec", "context": "audit-log delivery rate sustained after visibility fixes"}
+      ],
+      "tags": ["kafka", "event-driven", "schema-registry", "observability", "platform-engineering"]
+    },
+    {
+      "id": "walmart-trillion-message-kafka-mps",
+      "title": "Walmart's Trillion-Message Kafka Setup (Message Proxy Service)",
+      "company": "Walmart",
+      "group": "Messaging & Streaming",
+      "pdfFile": "harvest/ByteByteGo/The Trillion Message Kafka Setup at Walmart.pdf",
+      "tldr": "Walmart runs Kafka with 25K+ consumers processing trillions of messages/day at 99.99% availability, and got tired of consumer rebalancing storms, poison pills, and the cost coupling between partition count and consumer parallelism. Their fix is a Message Proxy Service (MPS): a Kafka Connect sink connector that consumes partitions itself and pushes messages to stateless consumer apps over HTTP/REST, decoupling consumer scaling from Kafka's partition model.",
+      "bullets": [
+        "Three core pain points: **consumer rebalancing** (triggered by K8s rolling restarts/scale events, missed heartbeats from GC pauses, or slow polls), **poison pill messages** causing head-of-line blocking as consumers refetch the same failing batch forever, and **cost**: consumer parallelism is capped by partition count, and adding partitions hits broker limits (~**4000 partitions per broker**) forcing expensive broker upsizing plus cross-team coordination.",
+        "**MPS architecture**: a single **reader thread** polls Kafka into a **bounded PendingQueue** (pausing the poll when full = built-in **backpressure**), an **order iterator** guarantees per-key ordering by allowing at most one in-flight message per key, and a **writer thread pool** delivers messages to consumer apps via **HTTP POST**.",
+        "A dedicated **offset commit thread** periodically commits the **highest continuous processed offset** per partition (if 1,2,3,5 are done it commits 3), trading a few re-deliveries after a crash for safe at-least-once progress.",
+        "The **REST contract doubles as error semantics**: 2xx = success, 4xx/5xx = keep retrying, 6xx = retry n times then DLQ, 7xx = straight to **DLQ** (bad format/business validation); repeated connect/read timeouts auto-classify a message as a **poison pill**, auto-DLQ it, and alert the owning team.",
+        "Consumer applications become **stateless REST services** that scale in Kubernetes purely on message volume, completely **independent of partition count** — and Kafka clusters can be sized for throughput rather than partition fan-out.",
+        "Because the reader thread always drains polls into the queue on time, broker-initiated 'stuck consumer' **rebalances were mostly eliminated** except for rare restarts/network issues.",
+        "Accepted trade-offs: an **extra network hop and a new service** to build/deploy/monitor, and they chose plain **REST over gRPC** for simplicity and universal language support (consumers are polyglot)."
+      ],
+      "decisionRule": "When consumer parallelism, not broker throughput, is your bottleneck, put a proxy between Kafka and consumers — convert pull-based partition consumption into push-based HTTP delivery so consumers scale independently of partitions.",
+      "quotableNumbers": [
+        {"number": "trillions/day", "context": "Kafka messages processed daily"},
+        {"number": "25K+", "context": "Kafka consumers across private and public clouds"},
+        {"number": "99.99%", "context": "availability of the Kafka deployment"},
+        {"number": "~4000", "context": "recommended partitions-per-broker limit driving cost concerns"}
+      ],
+      "tags": ["kafka", "consumer-rebalancing", "dead-letter-queue", "backpressure", "proxy-pattern"]
+    },
+    {
+      "id": "statsig-trillion-events-streaming",
+      "title": "How Statsig Streams 1 Trillion Events a Day",
+      "company": "Statsig",
+      "group": "Messaging & Streaming",
+      "pdfFile": "harvest/ByteByteGo/How Statsig Streams 1 Trillion Events A Day.pdf",
+      "tldr": "Statsig (feature flags/experimentation; customers include OpenAI, Atlassian, Flipkart, Figma) grew event volume ~20X in a year to over 1 trillion events/day as a startup. The signature trick is cost-driven: Pub/Sub carries only tiny metadata pointers while the actual event payloads live as zstd-compressed batches in GCS, plus aggressive batching, dedup, and spot-node economics.",
+      "bullets": [
+        "Pipeline has three stages: **Request Recorder** (ingestion — top priority is never losing data), **Log Processing** (business logic), and **Routing** (deliver to the right destination per customer), connected by a Pub/Sub-based message queue layer.",
+        "**Ingestion layer**: load balancer → auth of incoming batches → **rebatching** (small batches combined into large ones, with optimal batch size driven by a **dynamic config system**) → persistence; pods carry enough memory to **buffer up to an hour of an outage** without data loss, with fallbacks spanning regions and even cloud platforms.",
+        "Killer cost move in the **Message Queue Layer**: don't push event payloads through Pub/Sub — write bulk data to **GCS in compressed batches** and publish only **file-pointer metadata** to Pub/Sub; downstream consumers fetch from GCS. Pub/Sub-as-pointer-system is dramatically cheaper than streaming raw data through it.",
+        "**Business Logic Layer** runs rebatching → **stateful dedup using Memcached** (drop duplicate events early so downstream only sees unique data) → per-team **business logic plugins** (custom tags/transforms without separate pipelines per customer) → writer; the whole pipeline is **at-least-once**.",
+        "**Routing layer** splits by latency sensitivity: Warehouse Router uses cheap **BigQuery load jobs** for latency-insensitive data and the expensive **storage write API** only for real-time data; a Side Effects Service handles webhooks/integrations; a Real-Time Event Stream serves live dashboards from **Redis**.",
+        "A **shadow pipeline** mirrors production with the release candidate: blast a burst of a couple million events through it, automatically diff outputs against production, and stress-test **horizontal pod autoscaling** before any rollout.",
+        "Other cost levers: **spot nodes** for async workloads, switch from zlib (~90%) to **zstd (~95% compression, less CPU)**, bump the request recorder from **2 to 12 CPUs** so it can build bigger batches (fewer storage writes), no strict pod limits + **aggressive host-level pod stacking**."
+      ],
+      "decisionRule": "At trillion-event scale, the queue should carry pointers, not payloads — land big compressed batches in object storage and let the messaging system move only metadata; then split every downstream path by latency sensitivity to pay streaming prices only where they matter.",
+      "quotableNumbers": [
+        {"number": "1 trillion/day", "context": "events processed daily"},
+        {"number": "~20X", "context": "event volume growth over one year"},
+        {"number": "~95% vs 90%", "context": "zstd compression rate vs zlib, with lower CPU"},
+        {"number": "2 → 12 CPUs", "context": "request recorder upsize to enable bigger batches"},
+        {"number": "~1 hour", "context": "outage duration pods can buffer in memory without data loss"}
+      ],
+      "tags": ["event-streaming", "pubsub", "cost-optimization", "batching", "gcp"]
+    },
+    {
+      "id": "nubank-in-house-logging-platform",
+      "title": "Nubank's In-house Logging Platform for 1 Trillion Logs/Day",
+      "company": "Nubank",
+      "group": "Messaging & Streaming",
+      "pdfFile": "harvest/ByteByteGo/How Nubank Built an In-house Logging Platform for 1 Trillion Log Entries.pdf",
+      "tldr": "Nubank replaced a third-party logging vendor — which was expensive, opaque, lock-in heavy, and slowed queries whenever ingestion spiked — with an in-house platform built in two phases: an ingestion 'Observability Stream' and a Trino + Parquet + S3 query/storage layer. It now ingests 1 trillion logs (~1 PB) per day at 50% lower cost than the vendor.",
+      "bullets": [
+        "Why leave the vendor: no control over incoming data (no filtering/routing, so they paid to process low-value logs), **blind spots** inside the vendor pipeline, costs rising with no lever except paying more, **lock-in** (alerts and dashboards tied to vendor), and ingestion spikes degrading query performance during incidents.",
+        "**Two-phase build strategy**: phase 1 = **Observability Stream** (ingestion/processing), phase 2 = **Query and Storage Platform** — migrate and harden one layer at a time, with goals of reliability, scalability, and cost efficiency.",
+        "Key architectural decision: **decouple ingestion from querying** so a spike in one can never take down the other (the exact failure mode the vendor had).",
+        "**Ingestion pipeline**: open-source **Fluent Bit** as the lightweight log forwarder → in-house **Data Buffer Service** that groups logs into **micro-batches** (smooths traffic spikes, protects downstream) → in-house **Filter & Process Service** that filters/enriches/transforms logs and emits real-time pipeline metrics; designed extensible so new filters drop in quickly.",
+        "**Query/storage layer**: **Trino** as the distributed SQL engine chosen for its **partition pruning** (queries scan only needed slices) and multi-backend flexibility; **AWS S3** for durable, effectively infinite, cheap storage; logs stored as **Parquet** columnar files with an **~95% compaction rate**, generated by an in-house high-throughput **Parquet generator**.",
+        "Scale by mid-2024: **1 trillion logs/day ingested**, ~**1 PB/day** processed, **45-day retention** (~45 PB searchable at any time), ~**15,000 queries/day** scanning ~**150 PB daily**.",
+        "The mix of choices is deliberate: open source where commodity (Fluent Bit, Trino, Parquet, S3), **in-house services where control and cost tuning matter** (buffering, filtering, Parquet generation) — yielding predictable costs and full pipeline visibility."
+      ],
+      "decisionRule": "For petabyte-scale logging, separate ingestion from query, buffer with micro-batches, and store columnar Parquet on object storage queried by Trino — you get vendor-grade search at roughly half the cost, with control over what you ingest in the first place.",
+      "quotableNumbers": [
+        {"number": "1 trillion/day", "context": "log entries ingested daily"},
+        {"number": "~1 PB/day", "context": "data processed and prepared for storage"},
+        {"number": "45 days / ~45 PB", "context": "retention window and searchable data held"},
+        {"number": "15,000 queries/day scanning 150 PB", "context": "daily engineer query workload"},
+        {"number": "50% lower cost", "context": "vs the previous vendor-based solution"},
+        {"number": "~95%", "context": "Parquet compaction rate reducing storage footprint"}
+      ],
+      "tags": ["logging", "observability", "trino", "parquet", "build-vs-buy"]
+    },
+    {
+      "id": "datadog-monocle-metrics-database",
+      "title": "Datadog's Monocle: Custom Time Series Engine",
+      "company": "Datadog",
+      "group": "Databases & Storage",
+      "pdfFile": "harvest/ByteByteGo/How Datadog Built a Custom Database to Ingest Billions of Metrics Per Second.pdf",
+      "tldr": "Datadog built Monocle, a custom Rust time series storage engine, to power the real-time tier of its metrics platform that ingests billions of data points per second. The interesting twist is a Kafka-centric, shared-nothing design where database nodes never talk to each other — Kafka does distribution, WAL, and replication — and each CPU core owns its data exclusively.",
+      "bullets": [
+        "The metrics platform splits storage into two tiers: **Long-Term Metrics Storage** for historical analytics, and a **Real-Time Metrics Storage** tier holding only ~24 hours of data that serves **99% of all queries** (live dashboards and alerting). Optimize for the hot path.",
+        "Within real-time storage, data is split into two specialized databases: an **Index Database** storing only tags/metadata (resolves a query like 'CPU for all services in us-east' to stream IDs) and the **Real-Time Timeseries Database (RTDB)** storing only timestamps and values.",
+        "**RTDB nodes never coordinate with each other** — no gossip, no inter-node replication. **Kafka** does three jobs: data distribution (each node is assigned its own set of partitions), **write-ahead log** (a crashed node restarts, replays from its last Kafka offset, nothing lost), and **replication/disaster recovery** (Kafka replicates across Availability Zones out of the box).",
+        "**Monocle** is written in **Rust on Tokio**, replacing earlier **RocksDB**-based versions. The data model hashes the entire tag set into one number: (Organization, Metric Name, **Tag Hash**) → list of [Timestamp, Value] pairs, making every series lookup a direct hash lookup.",
+        "Concurrency is **thread-per-core / shared-nothing**: each CPU core has a dedicated worker that exclusively owns the data hashed to it — no locks, no coordination, no waiting. Incoming Kafka data is hashed and routed to the owning core's queue.",
+        "Storage is an **LSM-Tree** (memtable → immutable flushed files → compaction) with two custom optimizations: an **arena allocator** (the memtable gets one giant memory chunk freed all at once instead of millions of tiny frees) and **time-based file pruning** (every file has a known time range, so queries for the last hour instantly skip irrelevant files).",
+        "Because queries fan out to all workers, one slow worker stalls the whole query (**head-of-line blocking**). They handle load with two layers: **admission control** (stop accepting queries when falling behind Kafka or low on memory) and **cost-based scheduling using CoDel** (Controlled Delay) to keep latency bounded under bursts.",
+        "Accepted trade-offs: static partition-to-node routing (hot spots possible — a dynamic rebalancer is planned), and the index/timeseries split adds a two-step query; they plan to merge both into one **columnar** store colocating tags with points."
+      ],
+      "decisionRule": "For write-heavy time series, push coordination out of the database entirely — let Kafka be the WAL, the partitioner, and the replication layer, and make each node a dumb, lock-free, thread-per-core consumer.",
+      "quotableNumbers": [
+        {"number": "billions/sec", "context": "data points ingested by the metrics platform"},
+        {"number": "99%", "context": "of all queries served by the real-time (~24h) tier"},
+        {"number": "~24 hours", "context": "data retained in the real-time RTDB tier"}
+      ],
+      "tags": ["time-series", "kafka", "rust", "lsm-tree", "shared-nothing"]
+    },
+    {
+      "id": "netflix-distributed-wal",
+      "title": "Netflix's Distributed Write-Ahead Log",
+      "company": "Netflix",
+      "group": "Databases & Storage",
+      "pdfFile": "harvest/ByteByteGo/How Netflix Built a Distributed Write Ahead Log For Its Data Platform.pdf",
+      "tldr": "Netflix built a distributed, pluggable Write-Ahead Log service that standardizes durability, retries, and replication across hundreds of independent systems (Cassandra, EVCache, Elasticsearch, Kafka). It replaced a patchwork of per-team retry/backup hacks with one platform: every change is captured durably before being applied, so failures can always be replayed.",
+      "bullets": [
+        "Motivation: recurring reliability failures — data corruption after schema changes, inconsistent updates between **Cassandra** and **Elasticsearch**, message delivery failures during transient outages, bulk deletes OOM-ing key-value nodes, and some databases lacking replication. Each team built its own retry/backup solution, creating inconsistent guarantees.",
+        "The API is deliberately tiny: a single **WriteToLog(request)** RPC. The request has 4 parts — **Namespace** (logical app/tenant), **Lifecycle** (delay/retention timing), **Payload**, and **Target** (where to deliver: Kafka topic, database, cache). Response is just Durable (bool) + Message.",
+        "It is **pluggable**: each namespace is configured to use **Kafka** (high-speed streaming) or **Amazon SQS** (delayed delivery) underneath, with retry counts, backoff times, and delay intervals tunable via a **control plane** — no application code changes.",
+        "Architecture: **producers** (entry door, write to queue) and **consumers** (exit door, deliver to targets) are separate components that **scale independently**; every namespace gets its own dedicated queue plus a **Dead Letter Queue** for messages that repeatedly fail, so bad data is inspectable, not lost.",
+        "Three flagship use cases: **delayed queues** (SQS-backed backoff and automatic retry when Kafka/databases are down), **cross-region replication for EVCache** (writes/deletes captured and replayed across 4 US regions via Kafka), and **multi-partition mutations** (atomic multi-table Cassandra updates — all changes succeed or are retried — functioning like a two-phase commit).",
+        "Deployment: WAL runs on Netflix's **Data Gateway** infrastructure (mTLS everywhere, connection management, **auto-scaling and load shedding**) and is split into **shards** — independent deployments per use case (e.g. Ads shard, Gaming shard) — to prevent noisy neighbors. Namespace configs live in a **globally replicated SQL database**.",
+        "Trade-offs and principles: reuse existing infra (Data Gateway, Key-Value abstraction) instead of building from scratch; accept eventual consistency for multi-partition writes; actively manage slow consumers and backpressure via partitioning and controlled retries."
+      ],
+      "decisionRule": "Don't let every team reinvent retries and replication — centralize durability into one pluggable WAL service with a one-method API, and make queue choice, retries, and targets pure configuration.",
+      "quotableNumbers": [
+        {"number": "1 RPC", "context": "entire developer API surface (WriteToLog)"},
+        {"number": "4 regions", "context": "EVCache cross-region replication via WAL"},
+        {"number": "hundreds", "context": "independent systems that must stay consistent at Netflix"}
+      ],
+      "tags": ["write-ahead-log", "kafka", "reliability", "replication", "platform-engineering"]
+    },
+    {
+      "id": "airbnb-distributed-db-kubernetes",
+      "title": "Airbnb: Distributed Databases on Kubernetes",
+      "company": "Airbnb",
+      "group": "Databases & Storage",
+      "pdfFile": "harvest/ByteByteGo/How Airbnb Runs Distributed Databases on Kubernetes at Scale.pdf",
+      "tldr": "Airbnb runs distributed SQL database clusters spanning three separate Kubernetes clusters, each pinned to a different AWS Availability Zone — an unusual multi-cluster design most companies avoid. Combined with a custom operator, EBS-backed storage, and replica/stale read strategies, their largest cluster serves 3M QPS over 300+ TB at 99.95% availability.",
+      "bullets": [
+        "Core problem: Kubernetes is built for stateless workloads; databases are stateful and **quorum**-based (e.g. 2-of-3 must agree). Kubernetes doesn't understand data placement, so naive pod replacement can destroy quorum and take the database down.",
+        "Storage strategy: every node's data lives on **AWS EBS** volumes claimed via **Persistent Volume Claims**, so a replaced node reattaches its existing volume instead of re-copying the dataset. EBS durability is also why they can run with **just 3 replicas** — fewer copies, lower cost.",
+        "A **custom Kubernetes operator** serializes node replacements: it verifies every node in the cluster is healthy before allowing a pod replacement, ensuring a new node fully syncs before the next replacement starts.",
+        "Three replacement scenarios, three mechanisms: database-initiated changes go through the operator's health gate; infrastructure evictions (AWS retiring VMs) are intercepted by **admission hooks** that block the eviction, annotate the pod, and let the operator delete it in a controlled sequence; during unplanned hardware failures, the operator pauses all planned replacements to protect quorum.",
+        "**Multi-cluster deployment**: each database spans **3 Kubernetes clusters, one per AWS AZ**. Benefits: AZ-level fault isolation, reduced blast radius (a bad rollout hits one cluster while two keep serving), **canary deployments** (config/version changes go to one AZ first), and deliberate **overprovisioning** so two clusters can absorb full load if one dies.",
+        "They use **self-managed Kubernetes** (not EKS-managed control planes) specifically because managed control-plane upgrades can't be rolled back; upgrades roll one cluster at a time, smallest/least-critical first.",
+        "EBS's weakness is **tail latency** — p99 occasionally spikes to a full second. Mitigations: storage read timeouts with automatic retry on another node, **replica reads** (retries allowed on replicas, preferring the closest one), and **stale reads** for freshness-tolerant workloads so replicas serve without contacting the leader."
+      ],
+      "decisionRule": "Stateful on Kubernetes works if you make the platform quorum-aware: a custom operator to serialize node churn, EBS+PVC so data outlives pods, and one cluster per AZ so any single failure domain — including a bad deploy — only touches a third of capacity.",
+      "quotableNumbers": [
+        {"number": "3M QPS", "context": "largest cluster's query throughput"},
+        {"number": "300+ TB", "context": "data stored in largest cluster"},
+        {"number": "4M", "context": "internal shards distributing load"},
+        {"number": "99.95%", "context": "availability achieved"},
+        {"number": "~1 second", "context": "EBS p99 tail-latency spikes they engineered around"}
+      ],
+      "tags": ["kubernetes", "distributed-databases", "high-availability", "aws", "operators"]
+    },
+    {
+      "id": "linkedin-casal-restriction-system",
+      "title": "LinkedIn CASAL: 5M QPS Restriction Enforcement",
+      "company": "LinkedIn",
+      "group": "Databases & Storage",
+      "pdfFile": "harvest/ByteByteGo/How LinkedIn Scaled User Restriction System to 5 Million Queries Per Second.pdf",
+      "tldr": "LinkedIn's CASAL (Community Abuse and Safety Application Layer) must check user restrictions on essentially every request — 4-5 million QPS at sub-5ms latency. The article traces three generations: Oracle plus layered caching, then Espresso (NoSQL) with full in-memory replicas synced via Kafka, then off-heap memory with Venice/DaVinci eager caching.",
+      "bullets": [
+        "**Gen 1**: restrictions in **Oracle** tables. As LinkedIn went microservices, Oracle couldn't sustain the volume, so they layered caches: **server-side cache-aside** with TTLs, then a **client-side cache library** on application hosts (consistency burden, refresh storms hammered the DB), then a **full refresh-ahead cache** (every client holds the entire dataset in memory — zero network calls but heavy memory footprint and brutal restart reloads), plus **Bloom filters** as a compact probabilistic existence check.",
+        "**Gen 2** targets: **4-5M QPS**, **<5 ms latency** via pure in-memory lookups, **five 9s (99.999%) availability**, horizontal scaling, and real-time freshness.",
+        "Gen 2 moved data to **Espresso**, LinkedIn's custom distributed NoSQL document store; every new restriction record emitted **Kafka** messages (consumed via Brooklin) so all servers and data centers synchronized in real time, with in-memory caches using **FastUtil** data structures.",
+        "**CAP stance**: LinkedIn explicitly prioritized **Consistency + Availability over partition tolerance**, because past experience showed partitioned databases introduced latencies incompatible with the <5 ms budget, and stale restriction data is a safety/security problem.",
+        "Gen 2 pain: **bootstrapping** — on restart every host reloaded the entire restriction dataset from Espresso, taking **30+ minutes** for large datasets and straining the database; adversarial spikes kept growing the dataset.",
+        "**Gen 3** fix #1: **off-heap memory** — moving data out of the JVM heap slashed GC pause frequency/intensity, smoothing latency and letting hosts hold bigger datasets.",
+        "**Gen 3** fix #2: **Venice + DaVinci** — DaVinci is an **eager client cache** that proactively loads all restriction data (stored in **bitset-like, memory-efficient structures**) and Venice is LinkedIn's derived-data serving platform feeding it, giving much faster bootstraps and resilience to adversarial growth."
+      ],
+      "decisionRule": "When a check sits on every request's hot path, stop querying a database at all — replicate the full dataset into memory on every client, sync it with a change stream, and spend your engineering effort on GC (go off-heap) and bootstrap time (eager caching).",
+      "quotableNumbers": [
+        {"number": "4-5M QPS", "context": "restriction checks served platform-wide"},
+        {"number": "<5 ms", "context": "latency target via in-memory lookups"},
+        {"number": "99.999%", "context": "availability target (five 9s)"},
+        {"number": "30+ minutes", "context": "Gen 2 bootstrap reload time after restarts"}
+      ],
+      "tags": ["caching", "trust-and-safety", "kafka", "in-memory", "cap-theorem"]
+    },
+    {
+      "id": "facebook-live-billion-users",
+      "title": "How Facebook Live Scaled to a Billion Users",
+      "company": "Facebook/Meta",
+      "group": "Scaling & Migration",
+      "pdfFile": "harvest/ByteByteGo/How Facebook Live Scaled to a Billion Users.pdf",
+      "tldr": "Facebook Live went from a rooftop hackathon prototype to a global live-video platform serving 1.2B+ daily users in months, built on RTMPS ingestion at edge POPs, real-time transcoding in data centers, and a two-tier caching model. The interesting part is how they tamed viral traffic: cache-blocking timeouts against thundering herds and manifest-freshness tricks for live playback over plain HTTP.",
+      "bullets": [
+        "Ingest path: broadcasters (phones, hardware encoders, Live API) push **RTMPS** streams to the nearest **POP (Point of Presence)**, which terminates the connection close to the source, then forwards to a data center; POPs route streams using **consistent hashing** to spread load.",
+        "Data centers do the heavy lifting: authenticate streams with **stream tokens**, claim **single ownership** of each stream (one source of truth), **transcode into multiple bitrates**, generate **DASH/HLS** playback formats, and archive for replay — each DC operates like a mini CDN origin.",
+        "Delivery uses a **two-tier cache**: POPs are edge caches holding recent segments and manifests near viewers; DCs act as **origin caches** on POP miss. This shields expensive encoding hosts, localizes regional spikes, and lets each tier scale independently.",
+        "**Thundering herd** control via **cache-blocking timeouts**: on a POP miss, one request goes upstream and all duplicate requests for the same segment/manifest are held until it returns. Trade-off: too short a timeout unleashes the herd; too long adds viewer lag/jitter.",
+        "Live playback is **DASH over HTTP**: a rolling manifest (window of a few minutes) plus ~1-second media segments; clients poll the manifest and pick segment quality by bandwidth. It works because it's **simple, stateless, and cache-friendly**.",
+        "Manifest freshness done two ways: short **TTL** (a few seconds, clients re-fetch) for simplicity, or **HTTP Push** to POPs in near real-time when tight latency matters — TTL is simpler but staler.",
+        "Upload/VOD pipeline: **chunked uploads** for resumability on flaky networks, redundant paths with retries, metadata extraction starting mid-upload, and **parallel chunk-level encoding** stitched back together with dynamically generated **bitrate ladders**."
+      ],
+      "decisionRule": "For live video at scale, the hard problem isn't encoding — it's cache coordination: put a two-tier cache in front of your origin and collapse duplicate requests (request coalescing), because one viral stream can become half your traffic with zero warning.",
+      "quotableNumbers": [
+        {"number": "1.23 billion", "context": "daily active users forming the base load"},
+        {"number": "4 months", "context": "from rooftop prototype to MVP launch"},
+        {"number": "12 million", "context": "viewers a stream can spike to when it goes viral"},
+        {"number": "50%", "context": "share of all viewer traffic one hot stream can suddenly represent"},
+        {"number": "~1 second", "context": "length of each DASH media segment"}
+      ],
+      "tags": ["live-streaming", "cdn", "caching", "thundering-herd", "video"]
+    },
+    {
+      "id": "uber-zero-downtime-migration",
+      "title": "Uber's Billion-Trips Migration with Zero Downtime",
+      "company": "Uber",
+      "group": "Scaling & Migration",
+      "pdfFile": "harvest/ByteByteGo/Uber’s Billion Trips Migration Setup with Zero Downtime.pdf",
+      "tldr": "Uber migrated its trip fulfillment platform — the source of truth for trips, processing 2M+ transactions/second — from city-sharded in-memory 'pods' on-prem to a consolidated, cloud-database-backed architecture with zero downtime. The playbook (backward compatibility layer, shadow validation, traffic pinning, phased rollout, flat-aggregate-metrics observability) is the canonical answer to any 'how do you migrate a live system' interview question.",
+      "bullets": [
+        "Old architecture: city-sharded **pods**, each a self-contained set of services for one city/region behind a **city router**; inside a pod, shared-nothing **demand** (rider) and **supply** (driver) microservices kept state in **Cassandra and Redis**, synchronized via the **saga pattern** and in-memory data management.",
+        "Why it broke: **eventual consistency** traded atomicity for availability (constant reconciliation when second writes failed), multi-entity writes were app-layer **RPC orchestration** that had to verify/fix state mismatches, and pods had a **vertical scaling ceiling** — a city exceeding a concurrent-trips threshold couldn't grow past the cluster ring size.",
+        "New architecture: demand and supply consolidated into a **single application layer backed by a cloud database**, pushing transactional data management down to the datastore layer for consistency and scalability (hybrid cloud setup).",
+        "**Backward compatibility layer**: old API contracts and event schemas kept working unchanged so hundreds of internal/external consumers migrated at their own pace — accepted trade-offs: duplicated complexity across both systems, technical-debt risk, and per-request performance overhead.",
+        "**Shadow validation**: every request to the old system was mirrored to the new one and responses compared key-by-key, with **predefined tolerances** for transient/timing differences; minor diffs auto-logged, critical mismatches escalated for manual fix before cutover.",
+        "Pre-rollout: **E2E testing**, **load testing** at/above real traffic, and **database warm-up** — synthetic data loads to pre-fill caches and partitions so the cloud DB had no cold-start latency on day one.",
+        "**Traffic pinning + phased rollout**: each trip was pinned to the system where it started for its entire lifecycle (no mid-trip handoffs, no data fragmentation); migration began with idle/less-critical riders and drivers, then active trips city by city.",
+        "Observability goal: **aggregate metrics stay flat** — trip volume, completion rates, latency, error rates monitored at **city-level granularity**, with region-scoped rollback triggers so a problem in one city didn't stop migration elsewhere."
+      ],
+      "decisionRule": "Never migrate a live stateful system by switching traffic — pin each in-flight entity to its origin system for its full lifecycle, shadow-validate the new system against real production traffic first, and roll out in slices where your dashboards must stay flat.",
+      "quotableNumbers": [
+        {"number": "2 million+", "context": "transactions per second processed by the fulfillment platform"},
+        {"number": "1 million+", "context": "concurrent users on the platform"},
+        {"number": "10,000+", "context": "cities served by the platform"},
+        {"number": "zero", "context": "downtime achieved during the migration"}
+      ],
+      "tags": ["migration", "zero-downtime", "shadow-testing", "consistency", "microservices"]
+    },
+    {
+      "id": "zalando-delta-sharing-partner-insights",
+      "title": "How Zalando Shares Real-Time Data with Partner Brands",
+      "company": "Zalando",
+      "group": "Scaling & Migration",
+      "pdfFile": "harvest/ByteByteGo/How Zalando Delivers Real-Time Insights to Its Partners Brands.pdf",
+      "tldr": "Zalando replaced a patchwork of CSV-over-SFTP, APIs, S3 buckets, and email exports with Delta Sharing — an open protocol for zero-copy, cross-organization data sharing — to give thousands of partner brands governed, real-time access to 200+ datasets. It's a clean case study in choosing an open standard plus a managed service over building bespoke pipelines per partner.",
+      "bullets": [
+        "Problem: partner data was scattered across **CSV over SFTP, APIs, S3 buckets, email, and dashboard exports**; partners burned ~**1.5 FTEs per month** just extracting/cleaning data, and interfaces couldn't handle large historical pulls during planning cycles.",
+        "Partner ecosystem spans three business models (**Wholesale, Partner Program marketplace, Connected Retail**) and three maturity tiers — large partners want automated pipelines/real-time analytics, medium want dashboards plus periodic pulls, small want spreadsheets — so one rigid interface couldn't fit all.",
+        "Selection criteria: **cloud-agnostic** (partners on AWS/GCP/Azure/on-prem), **open standard** (no vendor lock-in), performance on datasets reaching **hundreds of terabytes**, granular **security/audit/lineage**, and support for real-time streaming, batch/incremental, and historical access patterns.",
+        "Chose **Delta Sharing**: an open protocol for secure, **zero-copy** sharing — partners query live Delta Tables in place (no file transfers, no duplicate copies, no sync drift) from **Pandas, Spark, Tableau, or even Excel**.",
+        "Ran it as **Databricks Managed Delta Sharing** instead of self-hosting: tight **Unity Catalog** integration gives a single source of truth for datasets/permissions/lineage, enterprise-grade audit/compliance, and no operational burden of running sharing servers and token management.",
+        "Architecture is three primitives: a **Share** (logical group of Delta Tables), a **Recipient** (digital identity per partner), and an **Activation Link** (secure URL to download credentials) — partners authenticate over HTTPS with token-based, per-partner scoped credentials.",
+        "Adoption work mattered as much as tech: step-by-step connect guides, troubleshooting docs, and **prebuilt connector snippets** cut partner onboarding from days to minutes; the pilot then expanded into a **company-wide data distribution platform**."
+      ],
+      "decisionRule": "When sharing data across organizational boundaries, don't build per-consumer pipelines — share governed tables in place via an open zero-copy protocol, and let one catalog own permissions, lineage, and audit.",
+      "quotableNumbers": [
+        {"number": "200+", "context": "datasets Zalando manages and shares with partners"},
+        {"number": "€5 billion+", "context": "gross merchandise value the data platform supports"},
+        {"number": "1.5 FTEs/month", "context": "what partners previously spent extracting Zalando data"},
+        {"number": "minutes vs days", "context": "partner onboarding time after prebuilt connectors"}
+      ],
+      "tags": ["data-sharing", "delta-lake", "lakehouse", "governance", "data-platform"]
+    },
+    {
+      "id": "agoda-finudp-financial-data",
+      "title": "Agoda's Single Source of Truth for Financial Data (FINUDP)",
+      "company": "Agoda",
+      "group": "Platform & Data",
+      "pdfFile": "harvest/ByteByteGo/How Agoda Built a Single Source of Truth for Financial Data.pdf",
+      "tldr": "Agoda's Data Engineering, BI, and Data Analysis teams each ran their own financial data pipelines off the same upstream sources, producing conflicting revenue/margin numbers. They consolidated everything into FINUDP, a single Spark-based pipeline with shadow testing, data contracts, and multi-level alerting — accepting slower change velocity in exchange for one trusted set of financial metrics.",
+      "bullets": [
+        "Problem: three teams each ran separate **ETL pipelines** from the same upstream booking/payment systems with their own logic — causing **duplicate reads**, **inconsistent metric definitions** (Finance vs Analytics computed revenue differently), and no centralized quality monitoring, so executives saw conflicting numbers.",
+        "Solution: **FINUDP** (Financial Unified Data Pipeline) — a single centralized pipeline built on **Apache Spark** processing all financial data from millions of bookings daily, with four layers: source tables → execution layer → data lake → downstream consumers (Finance, Planning, Ledger).",
+        "**Shadow testing** is the standout practice: every pipeline code change runs old and new versions side-by-side on the same production data in a test environment, and a diff summary is posted directly into the code review — reviewers see the data impact of a change before it merges.",
+        "**Data freshness** is enforced by an internal tool called **GoFresh** that monitors table update timestamps against hourly SLAs; if data is late it escalates to a 24/7 **Network Operations Center**. Multi-level alerting goes email → Slack → NOC escalation.",
+        "Data quality stack: **Quilliup** runs SQL comparisons between source and target tables and alerts when variance exceeds a threshold; **data contracts** with upstream teams come in two flavors — **detection contracts** (alert on production violations) and **preventative contracts** (run in upstream producers' CI) — plus **ML-based anomaly detection**.",
+        "Hardest migration problem was **semantic reconciliation**: each legacy pipeline had its own business rules, so Agoda documented intended meaning of every key metric, ran gap analyses across pipeline outputs, and held stakeholder workshops to agree on a single definition per dataset.",
+        "Performance: initial consolidated end-to-end runtime was ~**5 hours**; query tuning, partitioning strategy, and orchestration optimization cut it to ~**30 minutes**.",
+        "Trade-offs accepted: **velocity loss** — the unified pipeline gates on all upstream datasets being ready, any change requires whole-pipeline testing, and every transformation needs stakeholder sign-off. Centralization buys consistency and trust at the cost of coordination overhead."
+      ],
+      "decisionRule": "For financial data, accept slower change velocity and heavier governance to get one pipeline with one definition per metric — multiple 'fast' pipelines just means multiple versions of the truth.",
+      "quotableNumbers": [
+        {"number": "5 hours → ~30 minutes", "context": "end-to-end pipeline runtime after optimization"},
+        {"number": "95.6%", "context": "data pipeline uptime achieved last year"},
+        {"number": "millions/day", "context": "bookings' financial data points processed daily"}
+      ],
+      "tags": ["data-engineering", "data-pipelines", "spark", "data-quality", "fintech"]
+    },
+    {
+      "id": "linear-multi-region",
+      "title": "Linear's Multi-Region Architecture",
+      "company": "Linear",
+      "group": "Platform & Data",
+      "pdfFile": "harvest/ByteByteGo/How Linear Implemented Multi-Region Support For Customers.pdf",
+      "tldr": "Linear added an EU region (driven by GDPR/enterprise demand and Postgres vertical-scaling limits) without changing domains, sharding databases, or making developers region-aware. They route every request through a Cloudflare Workers proxy that consults a central auth service, while each region runs a complete, fully isolated copy of the stack.",
+      "bullets": [
+        "Drivers: **GDPR/compliance** demand from European enterprises, a **horizontal scaling path** beyond vertically scaling their single PostgreSQL deployment, and competitive advantage in enterprise deals vs Jira/Asana.",
+        "Four design principles: **invisible to users** (single domains, no eu. subdomain — routing lives in infrastructure), **developer simplicity** (feature code never thinks about regions), **feature parity** (no region-specific flags), and **full regional isolation** (a DB failure or deploy issue in one region cannot touch the other).",
+        "Architecture is three tiers: clients → a **Cloudflare Workers proxy** that calls a central **authentication service** to resolve the workspace's region and get a **signed JWT**, then forwards to a regional deployment; each region is a **complete replicated stack** (API servers, sync engine, background tasks, databases) — replicate whole deployments rather than shard databases.",
+        "Auth extraction was the hardest phase: auth tables were split into distinct schemas with **PostgreSQL-level permission boundaries** — auth can't read regional data, regional services can't read auth tables — so the separation is enforced by the database, not by application-code discipline.",
+        "**One-way data flow**: regional services call the auth service synchronously via internal **GraphQL**, but the auth service never calls regions synchronously — it broadcasts background tasks over **Google Pub/Sub one-to-many**. Record creation starts in the auth service (to enforce global uniqueness like workspace URL keys), updates propagate asynchronously via the **sync engine**.",
+        "The proxy worker caches auth tokens to avoid a round-trip per request, and exploits a Cloudflare Workers optimization: returning a fetch response unmodified hands long-lived **WebSocket** connections off to Cloudflare's efficient proxy path instead of keeping a worker alive.",
+        "Migration safety: Terraform configs refactored into **region-parameterized modules** (new region = instantiate modules with new values), a staging environment validated IaC fidelity and proxy routing, and **fallbacks** let the API authenticate requests directly while the proxy rolled out."
+      ],
+      "decisionRule": "When going multi-region, replicate the entire stack per region and concentrate all routing complexity in a thin proxy plus central auth service — never leak region-awareness into product code or user-facing URLs.",
+      "quotableNumbers": [
+        {"number": "sub-50ms", "context": "interaction latency target that defines Linear's product feel"},
+        {"number": "2 regions", "context": "US + EU, with framework for more"}
+      ],
+      "tags": ["multi-region", "data-residency", "cloudflare-workers", "postgres", "saas-architecture"]
+    },
+    {
+      "id": "databricks-client-side-lb",
+      "title": "Databricks' Intelligent Kubernetes Load Balancing",
+      "company": "Databricks",
+      "group": "Platform & Data",
+      "pdfFile": "harvest/ByteByteGo/How Databricks Implemented Intelligent Kubernetes Load Balancing.pdf",
+      "tldr": "Kubernetes' default kube-proxy balances at L4, choosing a pod once per TCP connection — which badly skews traffic for Databricks' long-lived gRPC/HTTP-2 connections. They moved load balancing into the client: a custom xDS control plane streams real-time endpoint data to a shared RPC library that picks the best pod per request, yielding uniform traffic and a 20% pod-count reduction.",
+      "bullets": [
+        "Root cause: kube-proxy (iptables/IPVS/eBPF) picks a backend **once per TCP connection**; with **gRPC over HTTP/2** keeping persistent connections, a few pods get pinned with most traffic while others idle — causing **high tail latency**, **over-provisioning**, and no error- or zone-aware routing options.",
+        "Core move: shift load balancing from infrastructure to the **client** — a **Layer 7, per-request** decision using a live endpoint view, removing **DNS and kube-proxy from the critical path** entirely.",
+        "Custom control plane (**Endpoint Discovery Service**) watches the Kubernetes API for Services and **EndpointSlices**, maintains a real-time topology with metadata (zone, readiness, shard labels), and **streams updates over the xDS protocol** to clients — no polling, no waiting for DNS TTLs.",
+        "Adoption strategy: the LB logic was embedded in the **shared Scala RPC client framework** used by most internal services, so every team got intelligent balancing with no app-code changes and **no sidecars** — much lighter than a service mesh.",
+        "Routing strategies are pluggable: **Power of Two Choices (P2C)** — pick two random healthy endpoints, send to the less loaded — works for most services; **zone-affinity routing** prefers same-zone endpoints for latency/cost and spills to other zones on overload.",
+        "The same EDS control plane feeds **Envoy for external ingress**, so internal service-to-service and external traffic share one source of truth for endpoints — unified service discovery, no divergent routing logic.",
+        "Lessons from rollout: new pods got traffic instantly, so they added **slow-start ramp-up** and biasing away from high-error pods; **CPU/memory-based routing proved unreliable** (metrics lag real-time conditions) so they switched to health-based signals."
+      ],
+      "decisionRule": "For persistent gRPC traffic on Kubernetes, connection-level L4 balancing is structurally broken — do per-request client-side balancing fed by a streaming xDS control plane, and prefer health signals over lagging CPU/memory metrics.",
+      "quotableNumbers": [
+        {"number": "20%", "context": "reduction in pod count across multiple services after rollout"},
+        {"number": "once per TCP connection", "context": "how often kube-proxy picks a backend — the root cause of skew"}
+      ],
+      "tags": ["kubernetes", "load-balancing", "grpc", "xds", "service-discovery"]
+    },
+    {
+      "id": "meta-threads-launch",
+      "title": "Building Meta's Threads App",
+      "company": "Meta",
+      "group": "Scaling & Migration",
+      "pdfFile": "harvest/GERGELY/Building Meta’s Threads App (Real-World Engineering Challenges).pdf",
+      "tldr": "A small, senior team of ~60 engineers inside Instagram built and launched Threads in 5 months, and it hit 100M users in 5 days — Meta's previous record for a new app was 1M in 5 days. The launch survived an unprecedented signup wave with no load testing, because Threads reused Instagram's battle-tested stack and Meta's infrastructure absorbed load far beyond forecasts.",
+      "bullets": [
+        "Backend runs on **Instagram's stack**: custom **Python + Django** with a REST API, plus **GraphQL** calls into Meta's monolithic Hack backend running on **HHVM**. Clients are native: **Swift** on iOS and **Jetpack Compose** (Kotlin) on Android — a deliberate use of the greenfield project to try newer technologies at scale.",
+        "Reuse reframed the problem from 'build a text social network from scratch' to 'reuse Instagram feed building blocks for text posts' — they leaned on existing UI frameworks, APIs, login/privacy/integrity infrastructure, and server infrastructure, which is why ~60 engineers shipped in **5 months** (first code late Jan 2023, app store submission June 2023).",
+        "The hardest anticipated scaling problem was the **one-tap Instagram graph copy** ('follow everyone you follow on Instagram'): celebrity accounts joined with millions of follows already queued, and post-launch the actual scale **far exceeded assumptions**, forcing a redesign of that system.",
+        "They launched early (to capitalize on Twitter rate-limiting free users) and therefore **skipped load testing entirely**, scaling capacity on the fly; a decade of investment in Meta's databases, graph indexing, ranking, integrity, and notification systems soaked up the load.",
+        "Testing trade-off: **no automated UI tests pre-PMF** (some flows had 3+ redesigns), relying instead on continuous **dogfooding** with master builds refreshed every few hours — but backend business logic followed **TDD** via internal frameworks that simulate state without touching production databases.",
+        "Launch monitoring used **ODS** (time-series engine) and **Scuba** (real-time analysis), tracking 'time to new content' (cold start), QPS/success rate on key endpoints, **async job queue lengths**, with endpoint-level catch-all alarms for anything under-provisioned.",
+        "Org design as architecture: a deliberately small, senior, isolated team (3 PMs, 3 designers, ~60 engineers) with a top-level sponsor, shipping fully polished but reduced-functionality internal milestones."
+      ],
+      "decisionRule": "For a greenfield product at a big company, maximize reuse of proven internal infrastructure and keep the team small and senior — platform headroom, not load testing, is what saves you when launch demand is 100x your forecast.",
+      "quotableNumbers": [
+        {"number": "100M users in 5 days", "context": "Threads signups in launch week (1M in the first hour, 30M day 1, 70M day 2)"},
+        {"number": "1M in 5 days", "context": "Meta's previous record for a new app launch"},
+        {"number": "~60 engineers", "context": "peak engineering team size, alongside 3 PMs and 3 designers"},
+        {"number": "5 months", "context": "first line of code to app store submission"}
+      ],
+      "tags": ["scaling", "launch", "social-network", "code-reuse", "feed"]
+    },
+    {
+      "id": "uber-m3-observability",
+      "title": "How Uber Built its Observability Platform (M3)",
+      "company": "Uber",
+      "group": "Platform & Data",
+      "pdfFile": "harvest/GERGELY/How Uber Built its Observability Platform.pdf",
+      "tldr": "Uber's metrics stack went through three generations: Graphite/Carbon/WhisperDB (not horizontally scalable, no replicas), a 6-month Cassandra + Elasticsearch + Go rebuild, and finally M3 — an open-source custom time-series database with etcd-based quorum consistency. By 2018 M3 ingested 600M metrics/second, making it one of the largest metrics systems in the world.",
+      "bullets": [
+        "The original **Graphite/Carbon/WhisperDB** stack failed three ways: **not horizontally scalable**, **no replicas** (one node dying lost ~1/8th of all of Uber's data), and adding capacity required taking the system offline for a week+.",
+        "Generation two (built in ~6 months for Halloween 2015): **Cassandra** as the time-series store, **Elasticsearch** as the metrics index, custom code in **Go**. It worked but Cassandra was the wrong tool — at ~700 Cassandra nodes with 10x year-on-year data growth they couldn't keep adding nodes.",
+        "**Split-brain** was the trigger for the rewrite: Cassandra's **gossip protocol** spread wrong state during network issues, requiring custom code to detect the correct cluster half. M3 deliberately swapped gossip for **quorum via etcd** — one consistent five-node cluster as source of truth.",
+        "M3 replaced Cassandra with a **custom time-series database** writing a custom file format to **raw SSDs** — they skipped HDFS and S3 because raw file storage was more efficient. Buying was impossible: no vendor could handle Uber's scale, and a vendor bill was estimated to exceed **$65M/year**.",
+        "2018 scale: ingesting **600M pre-aggregated metrics/sec** (~130 Gbit/s), persisting **20M metrics/sec**, serving 2,000 queries/sec fetching ~30B data points/sec, powering **9,000 Grafana dashboards** and **150,000 real-time alerts**.",
+        "**High cardinality** is the defining constraint of metrics systems: a city label (~10,000 cities) × products × payment methods × region explodes the index. Teams onboarding to M3 had to actively reduce label cardinality — ignoring cardinality is also what drives huge vendor observability bills.",
+        "Trade-offs they lived with: peak days brought ~4x load with no 4x budget; the team both built AND operated everything (Martin advises most companies against building observability from scratch); staffed exclusively with senior+ engineers at first — grew from 3 (2015) to 75 people (2019)."
+      ],
+      "decisionRule": "At 10x year-on-year data growth, horizontal scaling of an off-the-shelf store stops working — replace gossip-based consistency with quorum (etcd) and purpose-build the storage engine, but only after the cheaper off-the-shelf attempt has proven too small.",
+      "quotableNumbers": [
+        {"number": "600M metrics/sec", "context": "M3 ingest rate in 2018 (~130 Gbit/s), 20M/sec persisted after aggregation"},
+        {"number": "150,000", "context": "real-time alerts powered by M3, plus 9,000 Grafana dashboards"},
+        {"number": "~700 nodes", "context": "peak Cassandra fleet size before the M3 rewrite"},
+        {"number": "$65M/year", "context": "estimated vendor cost if Uber had bought observability instead of building"},
+        {"number": "3 to 75 people", "context": "observability team growth 2015-2019; 98% of Uber's ~4,000 developers used M3"}
+      ],
+      "tags": ["observability", "time-series", "metrics", "cardinality", "distributed-systems"]
+    },
+    {
+      "id": "uber-move-to-cloud",
+      "title": "Inside Uber's Move to the Cloud",
+      "company": "Uber",
+      "group": "Scaling & Migration",
+      "pdfFile": "harvest/GERGELY/Inside Uber’s move to the Cloud_ Part 1 - by Gergely Orosz.pdf",
+      "tldr": "Uber ran its own data centers for ~9 years (SJC, DCA, then PHX) before signing a long-term Google Cloud deal in Feb 2023. The piece dissects why owning data centers got harder — ODM hardware quality issues, manual maintenance, CapEx cash-flow pain, the chip shortage, Covid demand shock — and gives a precise primer on how 'availability zone' and 'region' mean different things at Uber vs AWS/Azure/GCP.",
+      "bullets": [
+        "Data center history: started on ~a dozen Dell PowerEdge servers at outsourced hosting; built first own DC **SJC** (2014), then **DCA**; around 2019 built **PHX** specifically to decommission SJC, which was too small and unreliable. For years most services ran from a single 'preferred' data center with periodic **failover tests**.",
+        "Hardware economics: Uber bought cheap low-**DWPD** SSDs that wore out within a year under write-intensive database loads, then switched from **OEM** (Dell/HP) to **ODM** (Quanta, Foxconn) around 2018-19 to cut margins — but understaffed the ODM process. With no firmware division (unlike Google/Meta), flaws were sometimes caught only in mass production, causing outages.",
+        "Uber automated software-side operations but hardware maintenance stayed far more manual than cloud providers' near-total automation — expensive in staffing and slow at replacing failed units.",
+        "Cloud push factors: **Covid-19** cratered Rides demand while data center costs stayed fixed; the 2020-22 **chip shortage** delayed hardware purchases, hurting capacity and cash flow; and the **Postmates acquisition** ($2.65B, built on AWS, single AZ) showed notably lower infrastructure cost as a share of spend than Uber's two regions / ~10 zones.",
+        "**CapEx vs OpEx** is the financial core: buying a $12,000 server is cash up front depreciated at $3,000/year over 4 years (cash-flow pressure); leasing the same capability at $3,500/year is predictable OpEx investors accept. Cloud shifts spend from CapEx to OpEx.",
+        "Software gravity also pulled cloud-ward: Uber's in-house **Schemaless** storage fell behind — teams onboarded to **Google Spanner** for consistency and scale Schemaless couldn't give.",
+        "Terminology trap worth quoting: Uber's 'zones' are separate rooms with separate power inside the **same building**, and a 'region' is one data center — whereas an AWS AZ is one or more full data centers placed **30-60 miles apart**, and a region needs 3+ AZs. Same words, very different blast radii."
+      ],
+      "decisionRule": "Own data centers only if you'll fund the whole operation — ODM engineering staff, firmware expertise, maintenance automation — otherwise the cloud's OpEx model and elasticity win, especially once demand shocks and chip shortages hit your CapEx plan.",
+      "quotableNumbers": [
+        {"number": "$2.65B", "context": "Postmates acquisition; ran on AWS in a single AZ with notably lower relative infra cost"},
+        {"number": "$12,000 vs $3,500/yr", "context": "CapEx (buy, 4-year depreciation) vs OpEx (lease) example for a server"},
+        {"number": "30-60 miles", "context": "typical separation between AWS availability zones — vs Uber's zones being rooms in one building"}
+      ],
+      "tags": ["cloud-migration", "data-centers", "infrastructure", "capex-opex", "availability-zones"]
+    },
+    {
+      "id": "designing-a-payment-system",
+      "title": "Designing a Payment System",
+      "company": "Pragmatic Engineer",
+      "group": "Platform & Data",
+      "pdfFile": "harvest/GERGELY/Designing a Payment System - by Gergely Orosz.pdf",
+      "tldr": "A full chapter from Alex Xu's System Design Interview Vol. 2 (vetted by Gergely from his Uber Payments years): design an e-commerce payment backend handling 1M transactions/day via a PSP. The point isn't throughput — 10 TPS is trivial — it's correctness: exactly-once execution, double-entry ledgers, and reconciliation as the last line of defense.",
+      "bullets": [
+        "Core components: a **payment service** (accepts payment events, runs AML/CFT **risk checks**), a **payment executor** (executes one payment order against the **PSP**, e.g. Stripe/Adyen, which talks to **card schemes**), a **ledger** (financial record), and a **wallet** (merchant balances). Money moves in two flows: **pay-in** (buyer card → platform account) and **pay-out** (platform → seller).",
+        "Data modeling rules: store **amounts as strings**, never doubles (serialization precision varies); make **payment_order_id globally unique** — it doubles as the **idempotency key** the PSP uses for deduplication; prefer a boring **ACID relational database** with proven stability over NoSQL/NewSQL.",
+        "**Double-entry bookkeeping** is non-negotiable: every transaction debits one account and credits another for the same amount, so all entries sum to zero — giving end-to-end traceability ('one cent lost means someone else gained a cent').",
+        "Don't touch card data: use the PSP's **hosted payment page** so card numbers never reach your system, avoiding most of **PCI DSS** scope. The PSP reports final status via **webhook** — the redirect URL is UX only; the webhook is the source of truth.",
+        "**Exactly-once = at-least-once (retry) + at-most-once (idempotency)**. Retries use exponential backoff; idempotency is enforced by a client-generated UUID key backed by a database unique-key constraint (insert fails = duplicate; concurrent duplicates get **429**).",
+        "Failure handling: track a payment state machine (NOT_STARTED → EXECUTING → SUCCESS/FAILED) in an append-only table; route retryable errors to a **retry queue** and repeated failures to a **dead letter queue**; prefer **asynchronous communication** (Kafka) over synchronous chains — this mirrors Uber's Kafka-based payment system.",
+        "**Reconciliation** is the last line of defense: every night the PSP/bank sends a **settlement file**, compared against the internal ledger; mismatches fall into three buckets — auto-fixable, classifiable but manually fixed by finance, and unclassifiable. Even with idempotent external APIs, reconcile anyway — never assume the external system is right."
+      ],
+      "decisionRule": "In a payment system design, lead with correctness, not scale: exactly-once = retries for at-least-once plus idempotency keys for at-most-once, double-entry ledger for traceability, and nightly reconciliation against the PSP settlement file as the final safety net.",
+      "quotableNumbers": [
+        {"number": "1M transactions/day ≈ 10 TPS", "context": "back-of-envelope proving the problem is correctness, not throughput"},
+        {"number": "429", "context": "response for concurrent duplicate requests sharing one idempotency key"},
+        {"number": "nightly", "context": "cadence of PSP settlement files driving reconciliation"}
+      ],
+      "tags": ["payments", "idempotency", "exactly-once", "ledger", "reconciliation"]
+    }
+  ]
+}

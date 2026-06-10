@@ -1,0 +1,84 @@
+{
+  "id": "agoda-single-source-of-truth",
+  "title": "How Agoda Built a Single Source of Truth for Financial Data (FINUDP)",
+  "sourceFile": "harvest/How Agoda Built a Single Source of Truth for Financial Data.pdf",
+  "source": {
+    "publication": "ByteByteGo",
+    "author": "ByteByteGo (based on Agoda Engineering Blog)",
+    "date": "2026-03-03",
+    "url": "https://blog.bytebytego.com/p/how-agoda-built-a-single-source-of"
+  },
+  "ingestedAt": "2026-06-08",
+  "domains": ["data", "infra"],
+  "summary": "Agoda had multiple teams (Data Eng, BI, Data Analysis) each running their own financial data pipelines off the same upstream systems. Result: duplicate sources, inconsistent metric definitions, no single source of truth, conflicting reports. They built FINUDP (Financial Unified Data Pipeline) on Spark to consolidate everything, defended by a heavy data-quality apparatus (shadow testing, staging, data contracts, freshness SLAs, multi-level alerting, anomaly detection) and honest trade-offs (velocity down, governance heavier).",
+  "signals": ["handling-ambiguity", "driving-results", "leadership-influence", "communicating-effectively", "ownership"],
+  "questionTypes": ["tough-project", "big-tech-decision", "trade-offs", "conflict", "results"],
+  "tags": [
+    "single-source-of-truth",
+    "data-pipeline-consolidation",
+    "data-quality",
+    "data-governance",
+    "reconciliation",
+    "shadow-testing",
+    "data-contracts",
+    "freshness-sla",
+    "anomaly-detection",
+    "stakeholder-alignment",
+    "spark",
+    "financial-data"
+  ],
+  "patterns": [
+    {
+      "name": "single-source-of-truth framing",
+      "what": "Reframe a consolidation effort away from speed/scale and toward TRUST: the real problem is that different teams get different answers to the same question because they each built pipelines off the same sources with their own logic.",
+      "donates": "A headline frame for any 'we unified X' story or design. Lead with 'people couldn't trust the data / got conflicting answers', not 'it was slow'. Turns a performance story into a risk story."
+    },
+    {
+      "name": "first-principles definitional work",
+      "what": "The hardest part of merging pipelines wasn't technical — each legacy system had evolved its own meaning for the same concept. They went back to first principles: documented the intended meaning of each metric/field, ran gap analyses where pipelines disagreed, and ran stakeholder workshops to agree a single definition before encoding it.",
+      "donates": "The 'hardest part was definitional, not technical' beat. Powerful for handling-ambiguity and leadership-influence stories — shows you align humans on meaning before you build. This is the exact move grafted into the DRIFT rewrite."
+    },
+    {
+      "name": "provable reconciliation",
+      "what": "Used a data-quality tool (Quilliup) to run SQL comparisons between target tables and their source tables, alerting when variance exceeds a threshold — so you can PROVE the curated data matches source, not just assert it.",
+      "donates": "The 'reconcile curated truth back to source and prove they match' line. Adds rigor/credibility to any data-platform result statement."
+    },
+    {
+      "name": "shadow testing",
+      "what": "On every pipeline code change, run old vs new version on the SAME production data in a test environment, diff the outputs, and surface the diff directly in the code review so reviewers see the data impact before merge.",
+      "donates": "A concrete safety practice to cite for maintainability / change-management questions. Shows engineering maturity beyond 'we wrote tests'."
+    },
+    {
+      "name": "data contracts (detection vs preventative)",
+      "what": "Formal agreements with upstream producers defining required structure/rules. Detection contracts monitor live prod and alert on violation; preventative contracts run in the producer's CI to catch issues before data is even published.",
+      "donates": "Vocabulary for governance / cross-team-dependency stories. The detection-vs-preventative distinction is a crisp, senior framing."
+    },
+    {
+      "name": "freshness SLA + multi-level alerting",
+      "what": "Internal tool (GoFresh) monitors table update timestamps against SLAs; tiered alerting escalates email -> Slack -> 24/7 NOC. Quality checks run automatically as data lands and stop the pipeline on violation.",
+      "donates": "Operational-discipline detail for reliability/on-call questions. Concrete escalation model to describe."
+    },
+    {
+      "name": "staging that mirrors prod",
+      "what": "A staging environment closely mirroring production where new logic, schema changes, and transformations run on realistic data before release — catching data-quality, integration, and performance issues safely.",
+      "donates": "Standard but citable safety-net practice for change-management / risk stories."
+    },
+    {
+      "name": "honest architectural trade-offs",
+      "what": "Explicitly named the costs of centralizing: velocity dropped (data dependencies mean all upstreams must be ready before proceeding), governance got heavier and slower, every change now tests the whole pipeline. Accepted deliberately in exchange for consistency and trust.",
+      "donates": "A template for the 'I'll be honest about the trade-offs' beat — naming real costs you took on purpose. Maps onto the trade-offs paragraph grafted into the DRIFT rewrite."
+    }
+  ],
+  "quotableNumbers": [
+    "End-to-end runtime optimized from ~5 hours down to ~30 minutes",
+    "95.6% data pipeline uptime last year (goal: 99.5% availability)",
+    "Millions of bookings / financial data points processed daily",
+    "Data updated every hour, aligned to downstream SLAs"
+  ],
+  "bestFor": "Behavioral stories about consolidating fragmented data systems, handling ambiguity through definitional alignment, or making big-tech architecture decisions with honest trade-offs. Also a technical reference for data-pipeline consolidation, data-quality/governance design, and source-to-target reconciliation.",
+  "caveats": "Agoda's stack is batch Spark for financial reporting, not streaming/security data. Borrow the FRAMING and arguments (single source of truth, definitional first-principles, reconciliation, trade-offs), not the specific tech — don't claim Spark/Quilliup/GoFresh as your own. The graft is conceptual.",
+  "relatedArtifacts": [
+    { "story": "drift-modernization", "note": "Primary graft target — donated SSOT framing, first-principles definitions, reconciliation, and honest trade-offs to the DRIFT rewrite." },
+    { "story": "governance-pushback", "note": "Freshness-SLA / shadow-testing / data-contract language maps closely onto the batch->streaming verification sub-story." }
+  ]
+}

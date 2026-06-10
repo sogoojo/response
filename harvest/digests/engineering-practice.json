@@ -1,0 +1,306 @@
+{
+  "track": "Engineering Practice",
+  "order": 3,
+  "generatedAt": "2026-06-10",
+  "description": "Gergely/Pragmatic Engineer practice digests — migration playbooks, incident war stories, on-call/shipping/QA practices, and planning culture. Strong on director-level framing and real company examples.",
+  "digests": [
+    {
+      "id": "migrations-done-well",
+      "title": "Migrations Done Well",
+      "company": "Pragmatic Engineer",
+      "group": "Migrations & Change",
+      "pdfFile": "harvest/GERGELY/Migrations Done Well - by Gergely Orosz.pdf",
+      "tldr": "Gergely Orosz's end-to-end playbook for executing migrations: types of migrations, a phased execution runbook (prepare, pre-migrate, migrate, wrap up, long-tail), and the people/business side. Core insight: migrations are an overlooked discipline, most migration outages come from missing dedicated monitoring, and the long-tail of moving consumers off the old system is where teams get burned.",
+      "bullets": [
+        "Four contrasting case studies: **PayPal** did a planned 1-hour downtime migration in 2012 (losses budgeted, completed as planned); **TSB bank** locked ~2M of 5M customers out in 2018 due to poor testing, costing $480M+ and the CEO's job; **Uber's Gulfstream** payments migration was zero-downtime, but its **long-tail writeback system** lacked monitoring and later caused a multi-day Instant Pay outage.",
+        "Know the **migration types** and their risk profiles: service replacement, service integration, **service extraction** (riskier than it looks), **code migrations** (hard to roll back; e.g. Stripe migrated 3.5M lines Flow-to-TypeScript over a weekend), **data migrations** (hard to roll back, hard to do atomically), and **infrastructure migrations** (riskiest — failure takes down everything).",
+        "Preparation checklist: understand the **why** and past constraints, inventory all **consumers and producers**, write and share a migration plan, do **capacity planning**, define **error budgets**, run a **security audit** (OpenSea's announced migration week became a phishing window where customers lost $1.7M+ in NFTs), and hold a **pre-mortem**.",
+        "Pre-migration validation toolkit: **monitoring first** ('lack of dedicated migration monitoring is the reason most migrations cause outages' — **throwaway monitoring is expected**, build it anyway), **shadowing** (parallel-run production traffic against the new system; doubles as load test, but mock side effects like emails), **load testing** (Uber's Hailstorm replayed 10 hours of production data in 1 hour), **dry runs**, and **simulating future events** like end-of-month billing runs.",
+        "The most important decision is **downtime vs zero-downtime**. Options span: zero downtime (most prep, but calm execution during business hours), downtime nobody notices (off-hours / queue-and-replay), **reduced functionality** (read-only mode), planned downtime, and regular downtime windows. Strategies: **switch over**, **staged rollout**, and **writeback to the old system**.",
+        "Manage the **long-tail**: make the new system primary with writebacks, migrate consumers one by one, then retire the old system (always later than predicted). Monitor the writeback path, build **self-service tooling/runbooks**, and get **leadership (CTO-level) sponsorship** in annual planning — without it, large migrations drag out or never finish.",
+        "People and selling: every migration needs a clear **lead and sponsor**; fight **migration attrition** by celebrating milestones and getting migration work recognized in promotions; sell to leadership with concrete numbers for doing it, **not doing it, and delaying it**."
+      ],
+      "decisionRule": "Start every migration by asking whether you need zero downtime, and assume the failure mode is missing monitoring — build dedicated, even throwaway, migration monitoring before you move a single byte, and plan the long-tail decommission as a first-class phase, not an afterthought.",
+      "quotableNumbers": [
+        {"number": "$480M+", "context": "cost of TSB bank's failed 2018 migration that locked ~2M of 5M customers out; CEO resigned"},
+        {"number": "3.5M lines", "context": "code Stripe migrated from Flow to TypeScript over a single weekend"},
+        {"number": "10 hours in 1 hour", "context": "Uber's Hailstorm tool replayed buffered production traffic compressed in time for load testing"},
+        {"number": "$1.7M+", "context": "NFT assets lost to phishing during OpenSea's announced week-long migration window"}
+      ],
+      "tags": ["migrations", "reliability", "monitoring", "rollback", "engineering-leadership"]
+    },
+    {
+      "id": "real-world-migrations-case-studies",
+      "title": "Real-World Migrations: Box, Pinterest, LinkedIn, Stripe, Spotify, DoorDash",
+      "company": "Pragmatic Engineer",
+      "group": "Migrations & Change",
+      "pdfFile": "harvest/GERGELY/Real-World Engineering Challenges #6_ Migrations.pdf",
+      "tldr": "Six company case studies showing how real teams execute high-stakes migrations. The recurring pattern across Box, Pinterest, and Stripe is dual writing: write to both systems, backfill, validate consistency, flip reads, flip writes, then retire the old system — while LinkedIn, Spotify, and DoorDash show the org tooling (dashboards, PM ownership, kill switches) that makes migrations land.",
+      "bullets": [
+        "**Box** migrated 80TB of HBase data (200 billion keys, 80,000 reads/sec, 20,000 writes/sec) to Google Cloud Bigtable with zero downtime via a **6-step plan**: async dual reads/writes → synchronous dual reads/writes → backfill → validate consistency → new system primary (still sync-writing to old) → retire HBase. They benchmarked Bigtable themselves rather than trusting Google's numbers — SSD latencies were **20x lower** than HDD.",
+        "**Pinterest** moved 4TB (14,000 reads/sec) from HBase to TiDB after evaluating **10+ solutions** and benchmarking 3 with shadow traffic, using a near-identical 7-step **double-writes** plan. The convergence with Box's plan shows dual writing is *the* standard zero-downtime data migration pattern.",
+        "**Stripe** moved subscriptions out of the Customers table — 'simple' except for hundreds of millions of objects and near-100% uptime requirements. Four steps: **dual writing + backfill → change read paths** (read both and compare before trusting new) → **change write paths → remove old data**.",
+        "**LinkedIn** deprecated a deployment system affecting **100+ engineers and 600+ use cases**; lessons: persuade clients of what's in it for them, **dogfood the written instructions** with engineers who lack context, **automate the common steps** (scripts cut 1-2 hours of manual work to minutes), open Slack channels and office hours, track progress with dashboards.",
+        "**Spotify** 'product-ified' migrations: each migration is **owned by a product manager**, alpha/beta tested before rollout, supported with training, and **gamified with leaderboards** — carrot over stick. Automation (auto-generated upgrade PRs teams just approve) is the third pillar.",
+        "**DoorDash** extracted session management from its monolith with three safety layers: a **'magic cookie'** to manually route test traffic, a **kill switch** for instant full rollback, and gradual percentage rollout via their experimentation framework — plus business-metric monitoring (conversion rates) so regressions paged them.",
+        "Key trade-off: backend-only data migrations (Box, Pinterest) advance only after validation so they barely need rollback plans, but **client+server migrations** (DoorDash) can break midway through rollout — that's when kill switches and partial-rollback mechanisms become essential."
+      ],
+      "decisionRule": "For any zero-downtime data migration, default to the dual-write playbook — write to both, backfill, validate consistency, flip reads, flip writes, retire — and never promote the new system to primary until you have measured (not assumed) data consistency.",
+      "quotableNumbers": [
+        {"number": "80TB / 200B keys", "context": "Box's HBase-to-Bigtable migration at 80K reads/sec, zero downtime in 6 steps"},
+        {"number": "20x", "context": "lower latency Box measured on Bigtable SSDs vs HDDs — by benchmarking themselves, not trusting vendor numbers"},
+        {"number": "100+ engineers, 600+ use cases", "context": "scope of LinkedIn's deployment-system migration"},
+        {"number": "1-2 hours to minutes", "context": "manual migration work LinkedIn cut per team by automating identical steps"}
+      ],
+      "tags": ["migrations", "data-migration", "dual-writes", "case-studies", "rollout-strategy"]
+    },
+    {
+      "id": "khan-academy-monolith-breakup",
+      "title": "Breaking up a Monolith: Khan Academy's Python-to-Go Rewrite",
+      "company": "Pragmatic Engineer",
+      "group": "Migrations & Change",
+      "pdfFile": "harvest/GERGELY/Real-world Engineering Challenges #8_ Breaking up a Monolith.pdf",
+      "tldr": "Deep dive into Khan Academy's 'Goliath' project: splitting a 1M-line Python 2 monolith into ~40 Go services behind federated GraphQL over 3.5 years with ~100 engineers, triggered by Python 2's end of life. The winning moves were field-by-field side-by-side migration, 'port behavior exactly' discipline, and running it as a fixed-scope fixed-timeline project.",
+      "bullets": [
+        "Trigger and scope: **Python 2 EOL (Jan 2020)** forced the decision; the team bundled three goals — get off Python 2, replace REST with **federated GraphQL**, and break the monolith into services. They chose **Go** for first-class App Engine support, fast compiles, and much lower memory (up to **10x cheaper** to run for some request types).",
+        "Phasing: **Phase 1 'Minimum Viable Experience'** defined the features that, if removed, would alter Khan Academy's identity; it took 2 years, ending with 95% of traffic on new code and 32 services. **Phase 2 'endgame'** (remaining 5%, internal tools) took another 1.5 years with a downsizing team (50 → 4 engineers).",
+        "Migration mechanics: avoid big-bang by migrating at the **field level** — literally moving User.FirstName to the Go service while User.LastName stayed in Python — via GraphQL federation. The rollout ladder per field: **shadowing** → **side-by-side testing** (call both, log diffs, return Python's answer) → **canary** percentage → Go-only with Python on standby → delete Python.",
+        "Discipline rules that worked: **'port the behavior exactly — if there's a bug in Python, port the bug'** (kept estimates accurate: the 2-year MVE estimate landed almost exactly); **one service owns each piece of data**; **keep shipping incrementally** — the first migrated service handled ~0.01% of traffic, and traffic share became the burndown metric.",
+        "Counter-intuitive project management: a **fixed-scope, fixed-timeline waterfall** project with a massive burndown chart, 'borderless engineering' (engineers floating between teams), and mini-deadlines along the critical path — finished **4 days before** the hard deadline. Hard deadlines proved motivating, not demoralizing.",
+        "Honest retrospective: nobody knew Go at the start, so ~100 developers ramped up and made mistakes — the EM admits **Python 3 might have shipped faster**; they broke their own port-exactly rule for internal tools (rewrote instead), which slowed them down; and the 3.5-year grind caused real attrition in product and design as feature work stalled.",
+        "Services don't free you from holistic thinking: the ~40 services are still a loosely-coupled 'monolith' sharing resources — one service hammering shared **Redis** affected others until they split instances, and inter-service caching caused **thundering herds** on expiry."
+      ],
+      "decisionRule": "For a monolith breakup or rewrite, migrate at the smallest verifiable slice (field-by-field with side-by-side diffing), port behavior exactly — bugs included — and run it as a fixed-scope, fixed-deadline project; resist the temptation to 'improve while migrating,' because that's what blows up estimates.",
+      "quotableNumbers": [
+        {"number": "1M+ lines → ~40 services", "context": "Khan Academy's Python 2 monolith split into Go services"},
+        {"number": "3.5 years, ~100 engineers", "context": "total project duration, finishing 4 days before the hard deadline"},
+        {"number": "up to 10x", "context": "cheaper service-hour cost running the same code on Go vs Python"},
+        {"number": "~0.01%", "context": "traffic handled by the first migrated Go service — ship the tiniest slice first"}
+      ],
+      "tags": ["monolith", "microservices", "rewrite", "graphql", "go"]
+    },
+    {
+      "id": "datadog-5m-outage",
+      "title": "Inside Datadog's $5M Outage",
+      "company": "Datadog",
+      "group": "Incidents & Reliability",
+      "pdfFile": "harvest/GERGELY/Inside DataDog’s $5M Outage (Real-World Engineering Challenges #8).pdf",
+      "tldr": "Deep-dive into Datadog's March 2023 first-ever global outage: an automatic Ubuntu security update to systemd restarted systemd-networkd on tens of thousands of VMs simultaneously across all 5 regions and 3 cloud providers, wiping Cilium-managed network routes and taking down the Kubernetes control planes themselves. Core insight: redundancy across regions and clouds is useless if a single shared config can fire everywhere at once.",
+      "bullets": [
+        "The trigger: a routine Ubuntu 22.04 **systemd security patch** was applied via a **legacy auto-update channel** left enabled in the base OS image. The patches themselves were harmless — the *rollout* was the problem: systemd re-executes itself on update, restarting systemd-networkd, which **deleted the eBPF/Cilium-managed network routes**, so nodes vanished from the network.",
+        "Why multi-cloud didn't help: Datadog ran the **same base OS image** on AWS, GCP, and Azure, and the auto-update window was **06:00-07:00 UTC for everyone**. All VMs updated within one hour, so 5 regions on 3 clouds failed simultaneously despite no coupling between them. Their normal blue/green, node-by-node change management was completely bypassed.",
+        "The fatal amplifier was a **circular dependency**: among the dead VMs were the ones running the **Cilium-based control planes**, so Kubernetes clusters could no longer schedule, auto-repair, or auto-scale — same pattern as Roblox's 73-hour 2021 outage (Consul needed Vault, Vault needed Consul).",
+        "Incident metrics framing: **TTD (time to detect)** was 31 minutes from first impact to declared incident; **TTM (time to mitigate)** was ~1 day 3 hours for live services and ~2 days for full resolution. TTM = TTD + TTE (time to engage) + TTF (time to fix).",
+        "Recovery was *complicated by* multi-cloud: some providers' auto-scaling just marked nodes unhealthy (reboot fixed them — fast), while others **immediately replaced unhealthy nodes**, destroying local data and creating a **thundering herd** of tens of thousands of new VMs that hit regional rate limits. The 'dumb' provider behavior was easier to recover from than the 'smart' one.",
+        "Follow-ups: made systemd-networkd config **preserve routing tables across updates**, and **disabled automatic OS updates entirely** — all updates now rolled out manually and gradually. Turning off auto-updates is fine *if* you have dedicated security staff applying patches deliberately.",
+        "Communication failures: ~1.5 hours to tell customers ingestion was affected, and **14 consecutive status updates** were near-identical copy-paste — frequent updates with zero new information. The postmortem sat unpublished for 2 months."
+      ],
+      "decisionRule": "Multi-region, multi-cloud redundancy is theater if every machine shares the same OS image and the same auto-update trigger — stagger or own every fleet-wide change, and never run your control plane on the infrastructure it controls.",
+      "quotableNumbers": [
+        {"number": "$5M", "context": "direct lost revenue (≈1 day of usage-based billing), per Datadog's earnings call"},
+        {"number": "5 regions / 3 clouds", "context": "AWS, GCP, and Azure all went down simultaneously despite no network coupling"},
+        {"number": "31 minutes", "context": "time to detection — first impact to declared incident"},
+        {"number": "24+ hours", "context": "degraded service duration; full resolution took almost 2 days"},
+        {"number": "14", "context": "consecutive status updates that were copy-paste with no new information"}
+      ],
+      "tags": ["incident-response", "postmortem", "kubernetes", "change-management", "multi-cloud"]
+    },
+    {
+      "id": "learnings-from-outages",
+      "title": "Learnings from Outages: Adevinta, GitHub, Reddit",
+      "company": "Pragmatic Engineer",
+      "group": "Incidents & Reliability",
+      "pdfFile": "harvest/GERGELY/Interesting Learning from Outages (Real-World Engineering Challenges #10).pdf",
+      "tldr": "Three public postmortems analyzed: Adevinta's month-long 'DNS murder mystery' chasing non-deterministic 5xx errors, GitHub causing a 30-minute outage by testing its own failover, and Reddit's 314-minute Pi-day outage from a Kubernetes 1.23→1.24 upgrade. Core insight: reliable SLIs, disciplined one-theory-at-a-time investigation, and practiced disaster-recovery procedures are what separate short outages from long ones.",
+      "bullets": [
+        "**Postmortem taxonomy**: internal postmortems are the most detailed; **customer-only postmortems** are confidentiality-scrubbed; **public postmortems** are heavily edited for customers, techies, press, and regulators. As a large customer you can demand an **RCA** from a vendor after their outage — Uber's payments team did this routinely.",
+        "**Adevinta's DNS murder mystery**: a spike of non-deterministic 5xx errors took a dedicated team **a whole month** to root-cause. They eliminated suspects one at a time before the **DNS latency SLI sitting in the red (93.85% vs SLO)** exposed the truth: a too-low concurrent DNS query limit on dnsmasq, plus internal DNS flooded with **hundreds of garbage DNS requests per second**.",
+        "Adevinta's two lessons: (1) **investigation management** — work one theory at a time, focus on disproving it, then move on, or you'll burn unbounded time; (2) **reliable SLIs** — flaky SLIs become noise nobody trusts, while trustworthy ones point you straight at the problem. (Old ops adage confirmed: when out of ideas, it's caching or DNS — here it was both.)",
+        "**GitHub's failover irony**: a live failover test of their second Internet edge facility exposed a **network pathing misconfiguration** and caused a ~30-minute outage. Because engineers knew it was a planned test, mitigation took **2 minutes from first alert**. Verdict: keep doing failover tests — finding a broken failover during a drill beats discovering it during a real disaster.",
+        "**Proper failover testing is hard**: a clean-conditions failover gives false confidence. Aim to simulate failing over **mid-state** with apps unable to shut down properly, and always test the **failback** too — failover working but failback breaking is common.",
+        "**Reddit's 314-minute Pi-day outage**: a Kubernetes **1.23→1.24 upgrade** broke ~2 minutes in. The team faced the classic dilemma — **debug live and forward-fix, or restore from backup with hours of guaranteed downtime**. After 1-2 hours of failed live fixes they chose the scary, never-done-in-production full restore. Proximate cause: a **node label rename between releases**; systemic cause, in their words: **'Inconsistency'** — nearly every critical cluster was bespoke from years of organic growth.",
+        "Trade-off worth quoting: **'move fast with autonomous teams' accrues infrastructure debt** — bespoke per-team infra caused repeated outages at Reddit, now being paid down by a dedicated compute team driving homogenization. Autonomy isn't free; someone eventually pays the reliability bill."
+      ],
+      "decisionRule": "Disaster-recovery procedures you haven't exercised in production don't exist — run the failover (and the failback), accept the short-term risk, and keep your SLIs trustworthy so the next mystery outage points at itself.",
+      "quotableNumbers": [
+        {"number": "1 month", "context": "how long Adevinta took to root-cause the non-deterministic DNS-related 5xx errors"},
+        {"number": "2 minutes", "context": "GitHub's time from first alert to reverting the failover test"},
+        {"number": "314 minutes", "context": "Reddit's downtime on Pi-day from the Kubernetes 1.23→1.24 upgrade"}
+      ],
+      "tags": ["postmortem", "dns", "failover-testing", "kubernetes", "slo"]
+    },
+    {
+      "id": "healthy-oncall-practices",
+      "title": "Healthy Oncall Practices",
+      "company": "Pragmatic Engineer",
+      "group": "Incidents & Reliability",
+      "pdfFile": "harvest/GERGELY/Healthy Oncall Practices - by Gergely Orosz.pdf",
+      "tldr": "Survey of oncall practices across ~100 companies: why engineer-owned oncall beats an Ops team, its real costs (burnout, attrition), and concrete healthy models from Google, Intercom, LaunchDarkly, and Monzo. Core insight: healthy oncall requires deliberate design — toil SLOs, compensation, caps on oncall time — and Big Tech (except Google) is mostly a bad template to copy.",
+      "bullets": [
+        "Standard structure: **primary oncall** acknowledges pages, unacknowledged alerts **escalate** to secondary, then tertiary. Benefits of engineers owning oncall: **faster resolution** (pager goes to someone with context), **'you build it, you own it'**, and a **feedback loop where engineers feel the pain of their own risky changes**.",
+        "Downsides are real: 24/7 stress, **burnout and attrition** — engineers at $2.5B and $17B public companies cited unpaid oncall as a primary reason for leaving. **Amazon is the most-cited burnout source**. Don't copy Big Tech's oncall — except Google's, healthier models live at startups and scaleups.",
+        "**Microservices multiply oncall load**: small services mean frequent alerts and cascading failures; Segment consolidated **140+ services into one** because 'we were literally losing sleep over it.' Consolidating lets teams share rotations — the trade-off is less per-team independence.",
+        "**Service tiering** ties oncall rigor to criticality. Google couples tiers to pay: **Tier 1 = 5-min ack, 66% of salary (or 40 min vacation/hour); Tier 2 = 30-min ack, 33%; Tier 3 = best effort, unpaid**.",
+        "**Google's playbook** is the gold standard: ~**3,000 SREs for ~30,000 engineers**; **toil SLOs** — more than ~10 pages/week breaches the SLO and the team must stop product work to fix the systemic cause; a **hard cap of 2 weeks compensated oncall per engineer per quarter**; and a **minimum rotation size of ~14 engineers**. A distributed NY+Zurich team cuts oncall burden >50% via timezone overlap.",
+        "**Volunteer-only, paid, centralized oncall works**: Intercom consolidated per-team rotations into one virtual volunteer team with alarms-as-code in Terraform, real pay, and next-day review of every page — and **out-of-hours pages dropped**. LaunchDarkly pays **$1,250/week**, runs follow-the-sun US/UK, and consistently has more volunteers than capacity.",
+        "Healthy-practice checklist: oncall engineers do **no roadmap work — they improve oncall instead**; **compensate with cash or vacation**; **minimize and measure out-of-hours alerts**; **cap oncall frequency** per quarter; use **shared and follow-the-sun rotations**. If you don't pay for oncall, expect it to show up in attrition."
+      ],
+      "decisionRule": "Treat oncall as a designed, compensated product with toil SLOs and hard caps — if your rotation is unpaid, noisy, and smaller than ~6-8 engineers, you're not running oncall, you're running a burnout pipeline.",
+      "quotableNumbers": [
+        {"number": "3,000 / 30,000", "context": "Google's SREs vs total software engineers"},
+        {"number": "10 pages/week", "context": "typical Google toil SLO threshold — breach it and the team stops product work"},
+        {"number": "2 weeks/quarter", "context": "Google's hard cap on compensated oncall time per engineer"},
+        {"number": "14 engineers", "context": "Google's minimum viable single-timezone oncall rotation size"},
+        {"number": "140+ → 1", "context": "services Segment consolidated, driven largely by oncall load"},
+        {"number": "$1,250/week", "context": "LaunchDarkly's pay for a voluntary 7-day oncall shift"}
+      ],
+      "tags": ["oncall", "sre", "burnout", "compensation", "microservices"]
+    },
+    {
+      "id": "resiliency-in-distributed-systems",
+      "title": "Resiliency in Distributed Systems",
+      "company": "Pragmatic Engineer",
+      "group": "Incidents & Reliability",
+      "pdfFile": "harvest/GERGELY/Resiliency in Distributed Systems - by Gergely Orosz.pdf",
+      "tldr": "Two chapters from Roberto Vitillo's 'Understanding Distributed Systems' covering the core tactical resiliency patterns: downstream protection (timeouts, retries with exponential backoff and jitter, circuit breakers) and upstream protection (load shedding, load leveling, rate limiting, constant work). Core insight: faults are inevitable; the job is to stop them propagating.",
+      "bullets": [
+        "**Timeouts are non-negotiable**: a network call without a timeout can hang forever and leak resources — and most stacks default to no timeout (Python requests defaults to infinity, Go's HTTP client has none). Set timeouts based on the **desired false-timeout rate** (e.g., 99.9th percentile response time), and enforce them centrally via a shared HTTP client wrapper or service mesh.",
+        "**Retry with exponential backoff + jitter**: delay = random(0, min(cap, base·2^attempt)). Backoff alone still synchronizes clients into **retry storms**; jitter spreads them out. Don't retry non-transient errors, and beware retrying **non-idempotent** calls.",
+        "**Retry amplification**: in a chain client→A→B→C, retries at every level multiply exponentially — the deeper the service, the more load it sees. With long dependency chains, **retry at a single level and fail fast everywhere else**.",
+        "**Circuit breaker** handles non-transient failure where retries make things worse: closed (counting failures), open (calls blocked instantly — 'the fastest network call is the one we don't have to make'), half-open (probe one call). When a non-critical dependency is open, **degrade gracefully** — Amazon's front page renders without recommendations rather than failing entirely.",
+        "**Load shedding vs load leveling vs rate limiting**: shedding = server rejects excess (503) based on **local state** like concurrent-request count; leveling = a **queue** between clients and service to smooth short spikes (dangerous if backlog grows unbounded); rate limiting (429 + Retry-After) enforces **per-key quotas based on global state**. Neither shedding nor leveling fixes sustained overload — pair them with **auto-scaling**.",
+        "Efficient rate limiter: instead of per-key timestamp lists, use **time buckets + a sliding window** — just **2 counters per API key**. Distributed version: batch updates in memory and **asynchronously flush** to the shared store, and if the store is down, **fail open** rather than reject traffic.",
+        "**Constant work pattern**: systems that behave differently under stress trigger rare bugs exactly when you can least afford them. Example: instead of broadcasting config deltas (which spike), the control plane **periodically dumps ALL users' settings to S3 and data planes re-read the whole file** — same work every cycle regardless of change volume, self-healing, and stress-testable. Wasteful-looking but reliable."
+      ],
+      "decisionRule": "Every network call gets a timeout, retries get jitter and live at only one level of the chain, and overload gets shed or throttled — designs that do constant, boring, predictable work beat clever ones that change behavior exactly when the system is on fire.",
+      "quotableNumbers": [
+        {"number": "99.9th percentile", "context": "response-time percentile to base a timeout on if you accept a 0.1% false-timeout rate"},
+        {"number": "429 + Retry-After", "context": "the response a rate-limited request should return so clients back off"},
+        {"number": "2 counters per API key", "context": "memory cost of the bucketed sliding-window rate limiter vs full timestamp lists"},
+        {"number": "3 states", "context": "circuit breaker: closed, open, half-open"}
+      ],
+      "tags": ["resiliency", "circuit-breaker", "rate-limiting", "retries", "distributed-systems"]
+    },
+    {
+      "id": "shipping-to-production",
+      "title": "Shipping to Production",
+      "company": "Pragmatic Engineer",
+      "group": "Shipping & Quality",
+      "pdfFile": "harvest/GERGELY/Shipping to Production - by Gergely Orosz.pdf",
+      "tldr": "Maps the spectrum of how code reaches production, from YOLO shipping (edit directly on a prod server) to multi-stage thorough verification, and shows how startups, traditional companies, large tech firms, and Facebook each land on that spectrum. The core insight: your release process should be calibrated to your real error budget and tooling investment, not copied from another company.",
+      "bullets": [
+        "Two extremes anchor the spectrum: **YOLO shipping** (change prod directly — fine for side projects and sadly common in urgent incident fixes) vs **thorough multi-stage verification** used in regulated industries (~6 months of testing for major changes at telecoms).",
+        "Typical company profiles: **startups** do few checks and push to prod; **traditional companies** rely on large QA teams and batched scheduled releases with sign-offs; **large tech companies** invest in automation — fast CI, **canarying**, **feature flags**, **staged rollouts**, trunk-based development with 100+ changes/day; **Facebook core** has fewer automated tests than assumed but a world-class automated canary rollout through ~4 environments that auto-halts when health metrics regress.",
+        "Responsible-shipping baseline: local verification, enumerate **edge cases**, automated tests, **code review**, CI green, **monitoring tied to your change** (at Uber most changes shipped as experiments with metrics they must not regress, e.g. % of successful trips), **oncall with runbooks**, and **blameless postmortems**.",
+        "Nine optional safety-net layers, each with trade-offs: separate deployment environments, dynamically spun-up test environments, dedicated QA, exploratory testing, canarying, feature flags/experimentation, staged rollouts (e.g. 10% New Zealand → 100% global), **multi-tenancy testing-in-production** (Uber, DoorDash), and **automated rollbacks** (Booking.com kills any experiment that degrades health metrics).",
+        "Taking pragmatic risks safely: explicitly decide which processes are **never okay to bypass**, have an easy-to-execute **rollback plan** (early Facebook diffs included a revert plan), proactively watch customer feedback channels, and track incident impact — if you don't know your outage count and cost, you're flying blind.",
+        "Use **error budgets** (built on SLIs/SLOs) to decide when risky deployments are acceptable: while the budget isn't exceeded, risky deploys may proceed; once it's spent, take no more shortcuts.",
+        "Deciding your approach comes down to four questions: how much tooling investment you'll make, how big an error budget the business affords (a private bank's money-flow bug vs a quickly fixed UI bug), how much legacy you must work with, and what minimum iteration speed you target."
+      ],
+      "decisionRule": "Calibrate verification to your error budget, not to 'best practice': invest in automation, staged rollouts, and automated rollbacks so you can ship fast with safety nets, because faster iteration with smaller changes is itself a quality strategy.",
+      "quotableNumbers": [
+        {"number": "4 environments", "context": "Facebook's automated staged canary rollout, auto-halting if health metrics regress"},
+        {"number": "100+ changes/day", "context": "trunk commits at large tech companies"},
+        {"number": "<1 day", "context": "lead time from commit to production for DORA elite performers and most Big Tech"}
+      ],
+      "tags": ["deployment", "ci-cd", "feature-flags", "rollbacks", "release-process"]
+    },
+    {
+      "id": "how-big-tech-does-qa",
+      "title": "How Big Tech Does QA",
+      "company": "Pragmatic Engineer",
+      "group": "Shipping & Quality",
+      "pdfFile": "harvest/GERGELY/(2) How Big Tech does Quality Assurance (QA) - by Gergely Orosz.pdf",
+      "tldr": "A company-by-company survey (Microsoft, Google, Meta, Apple, Amazon, Uber, Netflix) of how Big Tech produces quality software despite most having no dedicated QA/SDET roles. The dominant pattern: engineers own the quality of their own code, supported by central platform teams that build testing tooling — dedicated tester roles survive mainly where hardware or slow release cadences demand them.",
+      "bullets": [
+        "**Microsoft pioneered the SDET role** (a ~2:1 SDE:SDET ratio was common until ~2014) but the split created an **'us vs them' dynamic**, **ticket ping-pong**, and devs 'outsourcing' unit tests. Microsoft formally **retired the SDET role in mid-2014**, folding SDETs into the SE role.",
+        "The Visual Studio Team Services case is the canonical merge story: the team combined dev and test orgs, **threw away tens of thousands of tests that took 8 years to build**, and inverted the test pyramid — from mostly slow end-to-end tests (full run took the better part of a day) to mostly fast unit tests within 2 years, reporting improved quality, agility, and satisfaction.",
+        "**Google**: engineers own quality via unit tests; **EngProd** is a central division building test tooling and embedding in product teams. **Test Engineer** roles persist mainly for hardware; contract testers do smoke/E2E only — never unit or integration tests, which teams own.",
+        "**Meta**: no formal QA role; SWEs own all testing, **each team decides its testing approach** (Threads shipped in 5 months with no automated testing for the initial release — product-market fit mattered more), and the 4-environment automated rollout/rollback system acts as a quality backstop.",
+        "**Apple is the outlier**: the most invested in dedicated QA, including a 365/24 OS bug-triage organization — attributable to its **hardware focus** rather than proof that QA roles cause polish (Netflix is polished with zero QA function). **Amazon** keeps SDETs mostly for hardware-adjacent teams (Lab 126, Fire TV).",
+        "**Uber**: no QA roles; platform teams build test infrastructure (device farms, multi-tenancy for testing in production, ephemeral environments), 10,000+ employee dogfooders, and real-time business-metric monitoring. Removing dedicated testers made **everyone** care more about quality.",
+        "**Netflix**: no QA concept; quality ownership sits with PM, EM, and developers — yet Netflix shaped industry quality practice via **Chaos Monkey** (kickstarting chaos engineering), A/B experimentation culture, and perception-based quality tooling like **VMAF**."
+      ],
+      "decisionRule": "Engineers must own the quality of their own code — a separate test org creates slow feedback loops and 'us vs them' division; keep dedicated QA only where hardware, regulation, or slow release trains genuinely demand it, and invest the savings in test infrastructure and platform teams.",
+      "quotableNumbers": [
+        {"number": "2:1", "context": "common SDE:SDET ratio across Microsoft until ~2014, before the role was retired"},
+        {"number": "8 years / 2 years", "context": "VS Team Services discarded tests built over 8 years, replaced with a unit-test-heavy suite within 2"},
+        {"number": "10,000+", "context": "Uber employees dogfooding the app as a de facto testing population"}
+      ],
+      "tags": ["qa", "testing", "sdet", "engineering-culture", "big-tech"]
+    },
+    {
+      "id": "rfcs-design-docs-adrs",
+      "title": "Engineering Planning with RFCs, Design Docs and ADRs",
+      "company": "Pragmatic Engineer",
+      "group": "Planning & Decisions",
+      "pdfFile": "harvest/GERGELY/Engineering Planning with RFCs, Design Documents and ADRs.pdf",
+      "tldr": "How tech companies plan engineering work in writing — RFCs/design docs for feedback before building, ADRs for recording decisions after. Uber, Google, Sourcegraph, and Stedi all independently converged on written planning because a short document is the most scalable way to get feedback before implementation.",
+      "bullets": [
+        "**Uber's evolution is the template**: at <50 engineers, a bottom-up doc called **DUCK** ('no service deployed to production without a vetted DUCK') vetted new services; it evolved into **RFCs** with approver fields and per-domain templates (service SLAs, security, testing & rollout, monitoring); at 2,000+ engineers the process broke on **noise**, **ambiguity**, and **discoverability** — fixed by a searchable planning tool, lightweight templates for small changes, and a **tiered process** with formal review only for the most critical changes.",
+        "When to write an RFC: small changes — don't bother; non-trivial changes with dependencies — write one; effort should be **proportionate to complexity**. Four workflow patterns: prototype-then-RFC, RFC-wait-then-build (high-dependency projects), RFC-build-while-awaiting-feedback (pragmatic default), and build-then-RFC (a tick-box exercise — still better than nothing for historic record).",
+        "Review formats trade off: **async comments** (Uber, Google) scale across time zones but produce shallow, nitpicky feedback; **synchronous meetings** (Amazon's mandatory 6-pagers) yield engaged, higher-level feedback but cost everyone's time; **hybrid** — async first, meeting only if warranted — wins at larger orgs.",
+        "**RFCs are for feedback before deciding; ADRs record decisions already made.** Popular decision-record formats: **ADRs** (Markdown in Git, most popular), **arc42**, and the **C4 model** (context, containers, components, code).",
+        "**Stedi** (~75 engineers) runs an extreme writing culture: GitHub-based RFCs plus lightweight **Decision Records** with a named **decider**, immutable once complete (overturned only by a new record). Their core principle: **writing is a tool for thinking** — it surfaces requirements and assumptions before action.",
+        "**Google Design Docs** aim to catch design issues early, build consensus, and create organizational memory; skip the doc when it would just be an implementation manual with no trade-offs or alternatives — and 'I tried it out and it works' (prototyping) is one of the best arguments in a design doc.",
+        "Formality creep is a real failure mode: Sourcegraph's CTO notes RFCs drifted toward being seen as an 'official decision process,' which wasn't the intent."
+      ],
+      "decisionRule": "If you want feedback before you implement, there is no more scalable mechanism than a short written document — and an org without a writing culture will hit a wall scaling past 100-200 engineers when its senior reviewers become the bottleneck.",
+      "quotableNumbers": [
+        {"number": "1,000+", "context": "microservices at Uber by 2016 — the dependency explosion that made RFC vetting essential"},
+        {"number": "2,000+", "context": "Uber engineers when the flat RFC process broke and was replaced by a tiered one"},
+        {"number": "100-200", "context": "engineer count where orgs without a writing culture struggle to scale"}
+      ],
+      "tags": ["rfcs", "design-docs", "adrs", "planning", "writing-culture"]
+    },
+    {
+      "id": "big-tech-projects-no-scrum",
+      "title": "How Big Tech Runs Projects (and the Absence of Scrum)",
+      "company": "Pragmatic Engineer",
+      "group": "Planning & Decisions",
+      "pdfFile": "harvest/GERGELY/How Big Tech Runs Tech Projects and the Curious Absence of Scrum.pdf",
+      "tldr": "A 100+ company survey plus Big Tech interviews on project management. Big Tech almost universally lets teams choose their own process, runs 'Plan → Build → Ship' led by engineers, and skips Scrum — because autonomous, competent teams with first-class tooling need less imposed structure. Scrum still earns its keep for new teams, interrupted teams, and orgs shipping slower than monthly.",
+      "bullets": [
+        "Opening cautionary tale: Skype went all-in on **Scrum** in 2012 while **WhatsApp never uttered the word Scrum** and out-executed Skype to win messaging — **methodology and company success are not always correlated**; focus, leadership, and talent matter more.",
+        "Survey pattern across 100+ companies: Big Tech and public tech companies let **teams choose how they work**; venture startups use Plan-Build-Ship/Scrum/Kanban; **Scrum and SAFe dominate at large non-tech companies and consultancies**, where a methodology is mandated. Amazon plans with **6-pagers**, Google with **Design Docs**, Uber with **ERDs**, Shopify runs 6-week cycles — all engineer-led.",
+        "Survey insights: **team autonomy correlates with satisfaction**; teams struggling usually had problems no methodology would fix (lack of vision, attrition, poor tooling); engineers excluded from estimations they're committed to is a top demotivator; all 13 JIRA mentions were negative — one IPOed company measured JIRA at **NPS -83** internally.",
+        "Why no Scrum at Big Tech: **competent, autonomous people need less structure**; **engineers lead projects**, with no dedicated project managers at team level — **TPMs** (ratio ~1:50 at Uber) handle only multi-team programs. First-class tooling (CI/CD, feature flags, experimentation) replaced Scrum rituals — engineers validate their own work via staged rollouts.",
+        "The enabling org structure: empowered teams of 5-15 with clear mission, engineer-to-engineer communication, internal transparency, platform teams (30-40% of engineering) absorbing infra toil, and high pay justified by high leverage. **Copying Big Tech's process without this structure will fail.**",
+        "**In defense of Scrum** — four contexts where it wins: 'kitchen sink' teams needing protection from stakeholder interrupts; **forming/storming new teams** that benefit from an off-the-shelf process (then iterate away unneeded rituals); accelerating shipping from slower cadences; and orgs requiring uniform reporting — though **optimizing for reporting is optimizing for a low-trust environment**.",
+        "Leadership takeaways: iterative process changes beat big-bang rollouts; teach engineers to lead projects rather than doing it for them — slower upfront, but the team delivers more and people get promoted faster; some of the best engineers would rather quit than be micromanaged."
+      ],
+      "decisionRule": "Process is an enabler, not a goal: give competent teams autonomy plus first-class tooling and they need almost no imposed methodology — reach for Scrum only as scaffolding for new, interrupted, or slow-shipping teams, and expect healthy teams to iterate it away.",
+      "quotableNumbers": [
+        {"number": "~1:50", "context": "TPM-to-engineer ratio at Uber — program management reserved for multi-team complexity"},
+        {"number": "-83", "context": "internal NPS for JIRA at a recently IPOed high-growth tech company"},
+        {"number": "30-40%", "context": "share of Big Tech engineering on platform teams that remove the need for heavyweight process"},
+        {"number": "5-15", "context": "typical size of an empowered Big Tech team with clear mission and ownership"}
+      ],
+      "tags": ["project-management", "scrum", "agile", "team-autonomy", "big-tech"]
+    },
+    {
+      "id": "choosing-technologies-case-studies",
+      "title": "Choosing Technologies: Trello, Birdie, MetalBear, Motive",
+      "company": "Pragmatic Engineer",
+      "group": "Planning & Decisions",
+      "pdfFile": "harvest/GERGELY/Real-World Engineering Challenges #7_ Choosing Technologies.pdf",
+      "tldr": "Four case studies of how teams choose frameworks, languages, and architectures: Trello picking Kafka over RabbitMQ for websockets, Birdie adopting Micro Frontends, MetalBear standardizing on Rust, and Motive choosing Kotlin Multiplatform over Flutter/React Native. The through-line: change technology only for a pain point big enough to justify the cost, evaluate against your own written requirements, and adopt incrementally.",
+      "bullets": [
+        "**Trello → Kafka**: RabbitMQ powered websockets 2015-2018, but a cluster failure forced a **full reset** — dropping all sockets and **losing messages** — and recreating queues/bindings was slow. The team wrote explicit requirements (failover, in-order delivery per shard, fanout, **2,000 messages/sec**), evaluated 5 options (Kafka, SNS+SQS, SNS+FIFO SQS, Kinesis, Redis Streams), and chose Kafka. Note: they'd already migrated Redis Pub/Sub → RabbitMQ before — **a technology's pain points may take years to reveal themselves**.",
+        "**Birdie → Micro Frontends**: the trigger was a concrete pain point — every change re-ran the whole test suite, slowing development. Adoption was incremental: a one-week sprint where 3 engineers built the shell and extracted the already-isolated navigation as the first Micro Frontend, then lunch-and-learns, then 'all new features get their own Micro Frontend.' Breaking up the legacy app was **slower than expected** because business logic was entangled in **Redux/Redux-Saga**.",
+        "**MetalBear → Rust**: a 6-person startup chose per-component and converged on Rust for 3 of 4 components (no-GC small memory footprint, thread safety, standalone binaries). Being 'Rust-only' was also a deliberate **hiring magnet**: early language choice shapes engineering culture and recruiting for years.",
+        "**Motive → Kotlin Multiplatform**: iOS perpetually lagged Android by **1-2 months** with diverging business logic. They compared KMM vs Flutter vs React Native: React Native lost on performance (map-heavy app), Flutter lost on learning a whole new stack, KMM won on **native performance, native UI, simple integration**. They migrated only the network layer and session management, then used KMM for **new features only** — result: development ~**one-third faster** and iOS no longer waits.",
+        "Takeaway 1 — **solve a large enough pain point**: technology changes are expensive; Trello's combined reliability + cost problem cleared the bar. Takeaway 2 — for **greenfield projects, optimize for future pain points** (MetalBear betting Rust covers tomorrow's low-level needs), since there's no switching cost yet.",
+        "Takeaway 3 — **change one step at a time**: Birdie and Motive both prototyped, shipped one feature on the new approach, then applied it only to new code. 'Going back to refactor everything' is usually not pragmatic — neither company has migrated all legacy code, and that's fine."
+      ],
+      "decisionRule": "Change technologies only when you can name the pain point in one sentence and it's expensive enough to justify the switch — then write your requirements down, evaluate alternatives against them (not against hype), and adopt incrementally: new code on the new stack first, full rewrite almost never.",
+      "quotableNumbers": [
+        {"number": "5 alternatives", "context": "messaging options Trello evaluated against written requirements before choosing Kafka"},
+        {"number": "2,000 msgs/sec", "context": "throughput requirement Trello set for its websocket messaging replacement"},
+        {"number": "~33% faster", "context": "Motive's development-cycle speedup after unifying iOS/Android logic with KMM"},
+        {"number": "1-2 months", "context": "how far iOS perpetually lagged Android at Motive — the pain point that triggered the change"}
+      ],
+      "tags": ["technology-selection", "architecture", "trade-offs", "kafka", "micro-frontends"]
+    }
+  ]
+}

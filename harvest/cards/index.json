@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-06-08",
+  "count": 1,
+  "description": "Scannable roll-up of the harvest bank. Light fields only — filter here on intent, then open the full card file for the candidates that survive.",
+  "cards": [
+    {
+      "id": "agoda-single-source-of-truth",
+      "file": "cards/agoda-single-source-of-truth.json",
+      "title": "How Agoda Built a Single Source of Truth for Financial Data (FINUDP)",
+      "domains": ["data", "infra"],
+      "signals": ["handling-ambiguity", "driving-results", "leadership-influence", "communicating-effectively", "ownership"],
+      "questionTypes": ["tough-project", "big-tech-decision", "trade-offs", "conflict", "results"],
+      "tags": [
+        "single-source-of-truth",
+        "data-pipeline-consolidation",
+        "data-quality",
+        "data-governance",
+        "reconciliation",
+        "shadow-testing",
+        "data-contracts",
+        "freshness-sla",
+        "anomaly-detection",
+        "stakeholder-alignment",
+        "spark",
+        "financial-data"
+      ],
+      "summary": "Agoda consolidated fragmented team-owned financial pipelines into FINUDP (one Spark single-source-of-truth), defended by shadow testing, data contracts, freshness SLAs, multi-level alerting and anomaly detection, with honest velocity/governance trade-offs.",
+      "patternNames": [
+        "single-source-of-truth framing",
+        "first-principles definitional work",
+        "provable reconciliation",
+        "shadow testing",
+        "data contracts (detection vs preventative)",
+        "freshness SLA + multi-level alerting",
+        "staging that mirrors prod",
+        "honest architectural trade-offs"
+      ],
+      "relatedArtifacts": ["drift-modernization", "governance-pushback"]
+    }
+  ]
+}

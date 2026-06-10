@@ -1,0 +1,543 @@
+{
+  "track": "Design Patterns",
+  "order": 1,
+  "generatedAt": "2026-06-10",
+  "description": "Track A — pattern/concept digests from the ByteByteGo fundamentals PDFs. Decision rules are the priority: crisp opinionated lines to state with conviction.",
+  "digests": [
+    {
+      "id": "why-do-we-need-a-message-queue",
+      "title": "Why Do We Need a Message Queue?",
+      "company": "ByteByteGo",
+      "group": "Messaging & Events",
+      "pdfFile": "harvest/ByteByteGo/Why Do We Need a Message Queue_ - ByteByteGo Newsletter.pdf",
+      "tldr": "Explains why message queues exist using a Starbucks analogy and an e-commerce flash-sale architecture, then walks through 30 years of MQ history from IBM MQ to Kafka and Pulsar. Core insight: queues turn synchronous call chains into asynchronous, decoupled stages, and the product landscape evolved from messaging middleware (decoupling) to event streaming (throughput) to unified messaging-and-streaming platforms.",
+      "bullets": [
+        "Seven benefits of message queues in a flash-sale architecture: **fan-out** (payment service drops one message, payment channels/notifications/analytics each consume), **asynchronous processing** (order service doesn't wait for payment to finalize), **rate limiting** (cap incoming requests to match capacity), **decoupling** (services interact via message interfaces, deployable independently), **horizontal scalability** (scale each service independently on its planned QPS/TPS), **message persistence** (if upstream crashes, downstream picks messages back up — recovery moves from each service into the queue), and **batch processing** (analytics consumes via a tumbling window without the producer knowing).",
+        "**Message ordering** falls out naturally: in a flash sale of 10 iPhones with 10,000+ buyers, the queue's natural order decides — the first 10 in the queue win.",
+        "MQ history: **IBM MQ** (1993, still ~$1B revenue in 2020, dominant in finance), MSMQ (1997), JMS (2001), **SQS** (2004), **AMQP** (2006, born at JP Morgan Chase), **RabbitMQ** (2007), **Kafka** (2011, LinkedIn), **Pulsar** (2018, Yahoo).",
+        "**AMQP is a wire-level protocol** (specifies the data format on the wire) whereas **JMS is standardized only at the API level** — that's why AMQP implementations like RabbitMQ interoperate across languages.",
+        "**RabbitMQ architecture**: producer publishes to an **exchange** (direct, topic, or fanout), which routes to queues via bindings; designed ~20 years ago, so it's restricted in very high-volume, highly concurrent scenarios.",
+        "**Kafka** (open-sourced by LinkedIn in 2011) is optimized for writing: a high-throughput, low-latency distributed event log with producer/broker/topic/partition/consumer; its simplicity and fault tolerance let it replace AMQP-based queues.",
+        "**Pulsar** is an all-in-one messaging + streaming platform that is more cloud-native: **stateless serving layer** (brokers) separated from a **persistent layer** (Apache BookKeeper), multi-tenant URIs, persistent vs non-persistent topics, and native **tiered storage** to cheap object stores like S3 for long-term retention."
+      ],
+      "decisionRule": "Reach for a message queue whenever a synchronous call chain creates waiting — it buys you fan-out, decoupling, buffering, persistence, and independent scaling in one move; the evolution IBM MQ → Kafka → Pulsar maps to decoupling → high-throughput streaming → cloud-native all-in-one.",
+      "quotableNumbers": [
+        {"number": "$1 billion", "context": "IBM MQ annual revenue as recently as 2020 — legacy MQ's staying power in finance"},
+        {"number": "1993 / 2007 / 2011 / 2018", "context": "launch years of IBM MQ, RabbitMQ, Kafka, Pulsar"}
+      ],
+      "tags": ["message-queue", "kafka", "rabbitmq", "pulsar", "async-processing"]
+    },
+    {
+      "id": "how-to-choose-a-message-queue",
+      "title": "How to Choose a Message Queue? Kafka vs RabbitMQ",
+      "company": "ByteByteGo",
+      "group": "Messaging & Events",
+      "pdfFile": "harvest/ByteByteGo/How to Choose a Message Queue_ - ByteByteGo Newsletter.pdf",
+      "tldr": "A decision framework for picking a queue implementation: a database table or Redis covers simple needs, while large systems should evaluate dedicated products on functionality, performance, scalability, and ecosystem. Kafka is the common default but not universal — RabbitMQ wins on routing, priority, and native delayed messages.",
+      "bullets": [
+        "Start simple: a **database-backed queue** (order table with NEW/IN_PROGRESS/DONE statuses plus a housekeeping job) satisfies async processing + persistence when ordering and scalability barely matter — no Kafka needed.",
+        "**Redis as a queue, three ways**: **Pub/Sub** = at-most-once, no persistence (data lost if consumer is down; fine for metrics where loss is acceptable); **List** (RPUSH/BLPOP) = at-most-once but persistable to disk; **Stream** (XADD/XREAD) = **at-least-once**, persisted, consumer groups, and consumers choose where to read from.",
+        "For large systems, evaluate dedicated MQs on four axes: **functionality, performance, scalability, ecosystem**.",
+        "Kafka vs RabbitMQ mechanics: RabbitMQ (Erlang, AMQP) **pushes** messages and **deletes on ACK** — it sees pileups as problematic and handles backpressure poorly; Kafka (Scala/Java) lets consumers **pull at their own pace** and **deletes on retention expiry** — it's designed to hold massive message pileups.",
+        "Feature trade-offs: RabbitMQ has **flexible routing (exchanges)**, **message priority**, and ordering per queue; Kafka has none of those but scales by **adding partitions to a topic**, orders per topic-partition, and owns the **big-data/stream-processing ecosystem** (Flink, ELK integrate with it by default).",
+        "Throughput gap: RabbitMQ tops out at **tens of thousands of messages/sec** even on better hardware; Kafka handles **millions of messages/sec**.",
+        "Kafka-native use cases: **log processing** (agents → Kafka → ElasticSearch → Kibana), **clickstream/recommendations** (Kafka → Flink → data lake), **metrics monitoring/alerting**, **CDC** (transaction log → Kafka → connectors to ES/Redis/replicas), and **low-risk legacy migration** (old and new service consume the same topic with a reconciliation service comparing outputs before cutover).",
+        "**Delayed messages** are the standout RabbitMQ differentiator: an x-delay header delivers natively, while Kafka has no native delayed delivery — if delays are pervasive, just use RabbitMQ."
+      ],
+      "decisionRule": "Match the tool to the requirement, not the hype: a DB table or Redis for simple async + persistence, Kafka for high-throughput streaming/log/CDC workloads with pileup tolerance, RabbitMQ when you need flexible routing, priorities, or native delayed delivery — Kafka is common but not universal.",
+      "quotableNumbers": [
+        {"number": "tens of thousands msg/sec", "context": "RabbitMQ throughput ceiling — doesn't improve much on better hardware"},
+        {"number": "millions msg/sec", "context": "Kafka throughput — roughly two orders of magnitude above RabbitMQ"}
+      ],
+      "tags": ["kafka", "rabbitmq", "redis", "queue-selection", "trade-offs"]
+    },
+    {
+      "id": "messaging-patterns-pubsub-queues-event-streams",
+      "title": "Messaging Patterns: Pub-Sub, Queues, and Event Streams",
+      "company": "ByteByteGo",
+      "group": "Messaging & Events",
+      "pdfFile": "harvest/ByteByteGo/Messaging Patterns Explained_ Pub-Sub, Queues, and Event Streams.pdf",
+      "tldr": "Compares the three core messaging patterns — point-to-point queues, pub-sub fan-out, and durable replayable event streams — across delivery model, ordering, replayability, and latency/throughput, plus delivery semantics and a Kafka vs RabbitMQ tool mapping. Core insight: no pattern wins everywhere; pick by whether work is consumed once, broadcast, or retained as history.",
+      "bullets": [
+        "Three patterns, one sentence each: **Message Queues** = one producer, one consumer, each task processed once (point-to-point); **Pub-Sub** = one producer, many subscribers, each gets its own copy; **Event Streams** = a durable, append-only, replayable log where consumers track offsets and can rewind, catch up, or read in parallel.",
+        "**Delivery semantics**: **at-most-once** (no retries, fast but risky), **at-least-once** (retries, duplicates possible), **exactly-once** (gold standard, hardest). Most systems settle for **at-least-once** and make downstream operations **idempotent** to absorb duplicates.",
+        "Queue mechanics to name-drop: **single consumption** (ack = gone), FIFO is aimed for but not guaranteed unless explicitly configured, **retries/redelivery** after timeout (duplicate risk without idempotency), and **dead-letter queues** to quarantine poison messages. Queues are a **shock absorber** between fast producers and slow consumers — monitor queue depth, message age, and processing time.",
+        "Queue pitfalls: scaling consumers can **break ordering**; retries can flood the system with duplicates unless delayed/deduplicated; stuck consumers silently stall processing without health checks and timeouts.",
+        "**Consumer groups** (Kafka/Pulsar) hybridize the models: every group gets every message (pub-sub across groups), while consumers within a group share the load like a queue.",
+        "Pattern comparison: **ordering** — queues are FIFO-ish and break under retries, pub-sub has no global ordering by default, event streams guarantee **strong ordering within a partition** (critical for deterministic replay); **replayability** — queues discard on ack, event streams have first-class rewind by offset or timestamp; **latency/throughput** — queues are low-latency, pub-sub risks head-of-line blocking with slow subscribers, streams optimize for millions of msgs/sec at the cost of buffering/batching latency.",
+        "Tool mapping: **Kafka** = partitioned durable log, offset-based consumption, retention from hours to forever — best for analytics, telemetry, CDC, replay-heavy architectures; **RabbitMQ** = queue-first AMQP broker with rich routing and low latency — best for transactional tasks, worker queues, legacy integration; **Pulsar** = hybrid streaming + queuing with tiered storage, geo-replication, multi-tenancy."
+      ],
+      "decisionRule": "Choose by message lifecycle: a queue if each task must be done once by one worker, pub-sub if many systems must independently react to the same event, an event stream if you need ordered, replayable history — and default to at-least-once delivery with idempotent consumers.",
+      "quotableNumbers": [],
+      "tags": ["messaging-patterns", "pub-sub", "event-streams", "delivery-semantics", "idempotency"]
+    },
+    {
+      "id": "event-driven-architectural-patterns",
+      "title": "Event-Driven Architectural Patterns",
+      "company": "ByteByteGo",
+      "group": "Messaging & Events",
+      "pdfFile": "harvest/ByteByteGo/Event-Driven Architectural Patterns - ByteByteGo Newsletter.pdf",
+      "tldr": "A catalog of seven event-driven architecture patterns — competing consumer, consume-and-project, event sourcing, async task execution, event aggregation, saga, and transactional outbox — with the components, process flow, and caveats of each. Core insight: EDA swaps synchronous tight coupling for async loose coupling via a broker, and each pattern solves a specific consistency, scalability, or reliability problem.",
+      "bullets": [
+        "EDA core components: **event producers**, **event consumers**, **event broker** (routes and guarantees delivery), and **event streams**; versus request-response it is **asynchronous instead of synchronous** and **loosely coupled instead of tightly coupled**, giving fault tolerance and independent scaling.",
+        "**Competing Consumer**: multiple consumers pull from one shared queue for parallel throughput and fault tolerance; caveats — ordering needs **partitioning or sequence numbers**, and consumers must be **idempotent** because retries duplicate messages.",
+        "**Consume and Project**: stream changes from a primary DB to a projection service that builds a **materialized view** tailored to specific read queries — offloads read traffic from a monolithic/legacy system.",
+        "**Event Sourcing**: store every state change as an immutable event in an **event store** instead of just current state; replaying events reconstructs state at any point in time. Benefits: **reliable audit trail**, **temporal queries**, natural conflict resolution; cost: a mental-model shift plus an eventually consistent separate **read database** for queries.",
+        "**Async Task Execution**: scheduler → broker (possibly separate default and urgent queues) → workers, with a **retry policy using exponential backoff** for transient failures; tasks must be idempotent so retries don't corrupt state.",
+        "**Event Aggregation**: consolidate fine-grained events (Create Contact + Create Account + Create Address) into one coarse-grained event (Create Customer) emitted only when all parts arrive — reduces chattiness and simplifies consumers.",
+        "**Saga**: manage distributed transactions **without 2PC** as a chain of **local transactions**, each service publishing an event to trigger the next step; on failure, **compensating actions** undo prior steps (shipping fails after payment → reverse the payment).",
+        "**Transactional Outbox**: solves the dual-write problem — in **one local DB transaction**, update business entities AND insert the event into an **outbox table**; a separate process scans the outbox, publishes to the broker, and marks events sent. State change and event publication are atomic without 2PC."
+      ],
+      "decisionRule": "In any microservices design, pair Saga (compensating local transactions instead of 2PC) with the Transactional Outbox (atomic state-change-plus-event via one local transaction) — that combination answers the two hardest interview follow-ups: distributed transactions and the dual-write problem.",
+      "quotableNumbers": [],
+      "tags": ["event-driven", "saga", "event-sourcing", "transactional-outbox", "microservices"]
+    },
+    {
+      "id": "cqrs-pattern",
+      "title": "CQRS: Command Query Responsibility Segregation",
+      "company": "ByteByteGo",
+      "group": "Consistency & Microservice Data",
+      "pdfFile": "harvest/ByteByteGo/A Pattern Every Modern Developer Should Know_ CQRS.pdf",
+      "tldr": "Explains CQRS — splitting an application into a command (write) model and a query (read) model so each can be optimized and scaled independently — and ends with a five-factor decision framework for when the pattern is worth its complexity. Core insight: CQRS pays off when read and write workloads have genuinely different requirements; otherwise it adds eventual consistency and operational overhead for nothing.",
+      "bullets": [
+        "CQRS extends Bertrand Meyer's **CQS principle** (every method is either a command or a query, not both) to the architectural level — separate models, services, and even databases for writes vs reads; introduced by **Greg Young** in 2010.",
+        "The **command model** handles writes via task-based operations (e.g., 'CreateOrder', not generic CRUD); the **query model** uses **denormalized structures / materialized views** tailored to read scenarios, possibly aggregating data from multiple sources.",
+        "The two sides sync via **event-driven architecture**: the write side publishes events, the read side subscribes and updates its store — giving **eventual consistency** between command and query databases, plus loose coupling and independent scaling.",
+        "**Event sourcing** is a natural companion on the command side: store state as an append-only sequence of events, which gives a complete **audit trail**, temporal queries, and the ability to rebuild any number of read models from the event stream.",
+        "Reference cloud implementations: on **AWS, DynamoDB (write) + DynamoDB Streams + Lambda + Aurora (read)**; on **Azure, Cosmos DB + Change Feed + Azure Functions + Azure SQL** — in both, a managed change stream propagates writes to the read store.",
+        "Decision framework — adopt CQRS when: **high read-to-write ratio** or divergent read/write scaling needs; **complex domain logic** that differs between reads and writes; **audit/compliance** requirements (with event sourcing); a **skilled team** that can absorb the operational complexity; and **large, distributed teams** that benefit from owning read vs write models independently.",
+        "Anti-criteria: for **simple CRUD apps**, moderate traffic, small co-located teams, or tight deadlines, CQRS introduces unjustified complexity — and even when adopted, apply it **selectively to specific bounded contexts**, not the entire system."
+      ],
+      "decisionRule": "Use CQRS only in bounded contexts where read and write workloads genuinely diverge (read-heavy ratio, different scaling or modeling needs, audit requirements) — for plain CRUD with moderate traffic, a single model is the right answer and CQRS is over-engineering.",
+      "quotableNumbers": [],
+      "tags": ["cqrs", "event-sourcing", "read-write-separation", "eventual-consistency", "architecture-patterns"]
+    },
+    {
+      "id": "saga-pattern",
+      "title": "The Saga Pattern",
+      "company": "ByteByteGo",
+      "group": "Consistency & Microservice Data",
+      "pdfFile": "harvest/ByteByteGo/The Saga Pattern - ByteByteGo Newsletter.pdf",
+      "tldr": "Covers why distributed transactions (XA/2PC) break down in microservices and how the Saga pattern replaces them with a sequence of local ACID transactions linked by messages, undone via compensating transactions on failure. Compares orchestration (central coordinator sending commands) vs choreography (services reacting to each other's events) with explicit pros and cons.",
+      "bullets": [
+        "**2PC/XA distributed transactions** fail in microservices for two reasons: **limited technology support** (NoSQL stores like MongoDB/Cassandra and brokers like Kafka/RabbitMQ don't support XA) and **availability collapse** — 2PC is synchronous IPC, so overall availability is the **product** of all participants' availability.",
+        "A **saga** is a sequence of **local ACID transactions**, each within a single service; completing one local transaction publishes a message that triggers the next step, keeping participants loosely coupled and letting brokers buffer messages so the saga completes even if a participant is temporarily down.",
+        "Sagas **lack the isolation property** of ACID — intermediate states are visible to other services — and since each step commits locally, automatic ROLLBACK is impossible; failures are undone via **compensating transactions executed in reverse order** of the forward steps.",
+        "**Orchestration-based saga**: a central orchestrator sends **command messages** to participants and processes replies to decide the next step. Pros: **no cyclic dependencies**, loose coupling, and **separation of concerns** — coordination logic lives in the orchestrator so domain objects stay simple. Main risk: **centralizing business logic** into a 'smart orchestrator / dumb services' design — mitigate by limiting the orchestrator to pure step sequencing.",
+        "**Choreography-based saga**: no coordinator; each service publishes events (OrderCreated, PaymentSucceeded/PaymentFailed) and others react. Pros: simple to implement, loose coupling. Cons: **workflow is scattered across services** (hard to understand), **cyclic dependencies** between services subscribing to each other's events.",
+        "Two implementation essentials: the **transactional outbox pattern** to atomically update the database and publish the event, and **correlation IDs** (e.g., the order ID) carried in every event so each participant can map events to its own data."
+      ],
+      "decisionRule": "In microservices, replace 2PC with sagas — and default to orchestration for any non-trivial workflow because it centralizes the flow and avoids cyclic dependencies; reserve choreography for short, simple sagas with few participants, and always pair either style with the transactional outbox and compensating transactions.",
+      "quotableNumbers": [
+        {"number": "product of participant availabilities", "context": "overall availability of a 2PC distributed transaction — every participant must be up"}
+      ],
+      "tags": ["saga", "distributed-transactions", "orchestration", "choreography", "compensating-transactions"]
+    },
+    {
+      "id": "data-consistency-microservices",
+      "title": "Mastering Data Consistency Across Microservices",
+      "company": "ByteByteGo",
+      "group": "Consistency & Microservice Data",
+      "pdfFile": "harvest/ByteByteGo/Mastering Data Consistency Across Microservices.pdf",
+      "tldr": "A survey of consistency in database-per-service architectures: four consistency models (strong, eventual, causal, read-your-writes) with explicit selection criteria, plus five strategies to achieve consistency. Core insight: pick the weakest consistency model the use case tolerates, because every step up in consistency costs latency, availability, and scalability.",
+      "bullets": [
+        "Four consistency models: **strong** (every read returns the latest write), **eventual** (all nodes converge over time), **causal** (operations seen in the order issued, preserving cause-and-effect), and **read-your-writes** (the author always sees their own update immediately, others may lag).",
+        "Model selection rules: accuracy-critical → **strong** (banking, inventory); speed/availability over real-time accuracy → **eventual** (social feeds, analytics dashboards); ordering matters → **causal** (chat, collaborative editing); users must see their own changes → **read-your-writes** (shopping carts, profile settings).",
+        "Each model's cost: strong consistency brings **performance overhead and reduced availability**; eventual brings **temporary discrepancies and conflict resolution**; causal brings **dependency-tracking complexity**; read-your-writes still shows other users stale data.",
+        "**Synchronous communication** (REST/gRPC) gives real-time updates and deterministic ordering but suffers increased latency, **tight coupling**, and reduced availability (one service down can fail the whole chain); **asynchronous messaging** (Kafka/RabbitMQ) decouples services and survives downtime via queued messages, at the price of eventual consistency.",
+        "**Choreography vs orchestration** for distributed workflows: choreography has services react to events and emit **compensation events** on failure; orchestration has a central saga orchestrator call services and invoke compensating actions (refund payment, cancel order) when a step fails.",
+        "**Database-level solutions**: **Google Spanner uses the TrueTime API** for globally ordered transactions, **CockroachDB uses Raft** to replicate consistently; **CDC** (e.g., **Debezium** reading MySQL binlog / Postgres WAL) streams committed changes to caches, services, and warehouses for near-real-time eventual consistency.",
+        "Operational best practices: **retries** for transient failures, **circuit breakers** to stop cascading failures, **dead letter queues** to avoid losing unprocessable messages, **schema versioning** for backward compatibility, and **distributed tracing** (Jaeger/OpenTelemetry) to detect inconsistencies early."
+      ],
+      "decisionRule": "Match the consistency model to the use case, not the other way around: strong consistency only where accuracy is non-negotiable (money, inventory), eventual consistency everywhere speed and availability dominate, causal where ordering matters, read-your-writes where users edit their own data — then implement it with async messaging plus sagas/CDC rather than synchronous chains.",
+      "quotableNumbers": [
+        {"number": "5 ms / 8 ms", "context": "example async replication lags illustrating the eventual-consistency window"}
+      ],
+      "tags": ["consistency-models", "eventual-consistency", "cdc", "microservices", "event-driven"]
+    },
+    {
+      "id": "data-sharing-microservices",
+      "title": "Data Sharing Between Microservices",
+      "company": "ByteByteGo",
+      "group": "Consistency & Microservice Data",
+      "pdfFile": "harvest/ByteByteGo/Data Sharing Between Microservices - ByteByteGo Newsletter.pdf",
+      "tldr": "Distinguishes sharing a data source (multiple services hitting one database — an anti-pattern) from sharing data (exchanging it via APIs or events while each service keeps its own copy), then compares synchronous, asynchronous, and hybrid sharing approaches. Core insight: synchronous sharing buys immediate consistency at the cost of latency, coupling, and cascading failures, which is why async event-driven sharing with local copies is usually preferred.",
+      "bullets": [
+        "Key distinction: **sharing a data source** (direct access to another service's database) violates service data ownership and creates tight coupling; **sharing data** through well-defined APIs or messaging, with each service keeping **local copies**, preserves independence — 'don't share databases' does not mean 'don't share data'.",
+        "**Synchronous request/response** (Order Service calls Product Service and waits) gives immediate consistency but suffers **increased response time** per hop, **cascading failures**, resource exhaustion from held connections, and network congestion as inter-service calls multiply.",
+        "**Data duplication** (e.g., storing product name in the order table) avoids runtime calls but creates an update problem: every change must propagate to all copies — which is exactly what the async approaches solve.",
+        "The **gateway/coordinator approach** keeps duplicated data consistent synchronously: a coordinator sends the update to all participating services and rolls back everywhere if any fails. Simple to reason about, but **less reliable in failure scenarios** and poor at partial failures.",
+        "**Asynchronous event-driven sharing**: the owning service publishes events (ProductUpdated, OrderCreated) to a broker; subscribers update local copies at their own pace. Pros: **loose coupling, scalability, resilience**, faster responses. Cons: **eventual consistency**, infrastructure complexity, **message ordering** challenges, and error handling that needs retries and compensating actions.",
+        "**Hybrid approach** (ride-sharing example): Ride Service stores basic driver info (ID, name) locally via async events, but makes a **synchronous call for detailed data** (rating, car details) on demand — fewer remote calls and a smaller duplication footprint.",
+        "Decision factors: **consistency requirements** (strong → synchronous/gateway, for financial or medical data; eventual → async, for social posts/reviews), **performance** (strong consistency costs latency; eventual costs extra storage for local copies), and **scalability** (eventual consistency scales horizontally and lets services evolve independently)."
+      ],
+      "decisionRule": "Never share a database between services — share data instead: default to async event-driven sharing with local read copies and accept eventual consistency, reserve synchronous calls for the small subset of data that must be fresh and accurate, and combine both (hybrid) when a service needs cheap local access plus occasional detailed lookups.",
+      "quotableNumbers": [],
+      "tags": ["data-sharing", "microservices", "event-driven", "data-duplication", "coupling"]
+    },
+    {
+      "id": "api-gateway-vs-service-mesh",
+      "title": "API Gateway vs Service Mesh",
+      "company": "ByteByteGo",
+      "group": "Architecture & Trade-offs",
+      "pdfFile": "harvest/ByteByteGo/API Gateway vs Service Mesh - Which One Do You Need.pdf",
+      "tldr": "Breaks down the two patterns for taming service-to-service communication: the API gateway as the centralized front door for external traffic, and the service mesh as a decentralized sidecar layer for internal traffic. The core insight is that 'gateway = north-south, mesh = east-west' oversimplifies — they differ on deployment model, OSI layer, scope of control, identity model, and use-case breadth, and mature systems layer both.",
+      "bullets": [
+        "An **API gateway** is a centralized, edge-facing **L7** component: one entry point handling **routing/protocol translation** (HTTP, gRPC, WebSocket), **OAuth2/JWT/API-key auth**, **rate limiting**, **load balancing and caching**, **observability**, and **API versioning/aggregation** so backends can evolve without breaking clients.",
+        "A **service mesh** is a decentralized infrastructure layer: **sidecar proxies** next to every service instance (the **data plane**, on the request path) plus a **control plane** (off the request path) that pushes config, manages service identities, and coordinates updates. Networking moves from application code into infrastructure.",
+        "Mesh responsibilities: **mTLS encryption and per-service identity** (zero-trust internally — no implicit trust based on IPs/networks), **dynamic service discovery**, **load balancing with transparent retries/timeouts**, automatic **telemetry** without instrumenting apps, **circuit breaking and fault injection**, and runtime-updatable **access policies**.",
+        "Five differentiation axes: **deployment model** (centralized edge cluster vs sidecar per replica), **layer of operation** (gateway is L7-only; mesh spans **L4 + L7**), **scope of control** (who gets in vs how services talk inside), **identity** (external OAuth2/JWT/API keys vs internal mTLS certificates), and **use-case breadth** (gateway does **API productization** — developer portals, onboarding, monetization; mesh never deals with API consumption).",
+        "Choose an **API gateway** when exposing APIs to external consumers or internal teams as products, enforcing auth/rate limits at the edge, acting as a **facade over backend evolution**, or adapting to diverse clients.",
+        "Choose a **service mesh** when managing dozens-to-hundreds of dynamic microservices (especially on **Kubernetes**, where IPs churn constantly), needing observability without code changes, enforcing **zero-trust mTLS** internally, or requiring advanced traffic control: retries with jitter/backoff, failover, circuit breakers, **canary releases and traffic splitting**.",
+        "They are complementary, not interchangeable: combined, the **gateway handles ingress at the edge** (validates a token, rate-limits, transforms HTTP to gRPC) then hands off to the **mesh which governs everything inside** (secure routing, retries, circuit breakers, traces)."
+      ],
+      "decisionRule": "API gateway and service mesh solve different problems at different layers — gateway controls how external clients enter (edge, L7, API-as-product), mesh controls how services talk inside (sidecars, L4+L7, mTLS zero-trust); treating them as interchangeable is an architectural mistake, and mature systems use both layered together.",
+      "quotableNumbers": [],
+      "tags": ["api-gateway", "service-mesh", "microservices", "kubernetes", "zero-trust"]
+    },
+    {
+      "id": "monolith-vs-microservices-vs-modular-monolith",
+      "title": "Monolith vs Microservices vs Modular Monolith",
+      "company": "ByteByteGo",
+      "group": "Architecture & Trade-offs",
+      "pdfFile": "harvest/ByteByteGo/Monolith vs Microservices vs Modular Monoliths_ What's the Right Choice.pdf",
+      "tldr": "Compares the three architectural styles on development speed, scalability, fault isolation, and operational cost, then maps the migration paths between them with concrete triggers. Core insight: the modular monolith is the deliberate middle ground — single deployable unit, but internally split into API-communicating modules — that keeps monolith simplicity while making a later microservices extraction cheap.",
+      "bullets": [
+        "**Monolith**: single codebase + single deployment unit + usually one shared relational database. Wins early — in-process calls (no network), one-command deploys, easy end-to-end testing, ideal for small fast-moving teams. Airbnb started as a **Ruby on Rails monolith**; Twitter also started monolithic.",
+        "Monolith downsides: scaling is a **blunt tool** — if payments is hammered, you must scale the entire app; tight intertwining means a login tweak can break checkout; and you're locked into **one tech stack**.",
+        "**Microservices**: independent services, each with **its own database, tech stack, and deploy pipeline**, communicating via REST/gRPC/message brokers. Benefits: scale only hot services, polyglot freedom per team, and **fault isolation** — payment service failing doesn't take down login or catalog.",
+        "Microservices costs: orchestration complexity (needs **Kubernetes**-class tooling), more servers/databases/infra spend that isn't worth it for small systems, and **eventual consistency** — cross-service data propagation must be explicitly designed for.",
+        "**Modular monolith**: single codebase and deployment unit, but divided into domain modules (billing, users, catalog) with **clear boundaries**, communication via **internal APIs or events** (never shared variables), and per-module data ownership (schemas/namespaces even within a shared DB). Downsides: still **scales as a whole**, and risks **sneaky hidden dependencies** without discipline.",
+        "Migration triggers: **monolith → microservices** when traffic/complexity overwhelms one codebase — use the **Strangler Fig pattern** (proxy in front; extract a service, migrate reads, then writes), DDD **bounded contexts** starting with the most strained component, and one database per service; **monolith → modular monolith** when the codebase is chaotic but the team isn't ready for distributed complexity; **modular monolith → microservices** when one specific module needs independent scaling — extract just that module.",
+        "Because modular monolith modules already talk through APIs, extracting one into a network-based microservice later requires **minimal changes** — it's the cheapest insurance policy against future scale."
+      ],
+      "decisionRule": "Start with a modular monolith by default — monolith simplicity with microservice-ready boundaries — and only extract a module into a real microservice when it concretely needs independent scaling, deployment, or its own tech stack; jumping straight to microservices buys operational complexity, infra cost, and eventual consistency you likely don't need yet.",
+      "quotableNumbers": [],
+      "tags": ["monolith", "microservices", "modular-monolith", "strangler-fig", "architecture-migration"]
+    },
+    {
+      "id": "coupling-and-cohesion",
+      "title": "Coupling and Cohesion",
+      "company": "ByteByteGo",
+      "group": "Architecture & Trade-offs",
+      "pdfFile": "harvest/ByteByteGo/Coupling and Cohesion_ The Two Principles for Effective Architecture.pdf",
+      "tldr": "Goes beyond the textbook 'loose coupling good, high cohesion good' checklist to show how the two forces interact in real systems. Core insight: coupling looks outward (how much a module depends on others), cohesion looks inward (how well a module stands on its own) — and optimizing one while ignoring the other breaks systems in subtle ways.",
+      "bullets": [
+        "**Coupling** = how much one module depends on another's internals. **Tight coupling** signs: calling another module's internal methods/state directly, a change in one module forcing changes in unrelated ones, and control flow smeared across classes that assume each other's behavior.",
+        "**Loose coupling** signs: depend on **interfaces not implementations**, communicate via **events/messages/abstract APIs**, expose **minimal surface area**. But it has costs: logic spreads across boundaries, and in distributed systems loose coupling costs **observability and latency**.",
+        "Tight coupling isn't always bad: it can **improve latency on performance-critical paths** and cuts time-to-market in early prototypes — it trades flexibility for immediacy. Conversely, over-abstraction hurts: 'four interfaces and three DI bindings' to trace one feature destroys clarity.",
+        "**Cohesion** = how tightly related the responsibilities inside a module are. **Low cohesion** shows up as catch-all classes (a UserManager doing CRUD + auth + password emails + logging): it raises **cognitive load**, introduces **hidden dependencies** via side effects, and breeds spaghetti architecture. **High cohesion** (a TokenService doing only JWT create/validate/expire) makes tests easy and internal changes safe.",
+        "Cohesion is about **relatedness, not size** — a large module can be cohesive if everything serves one purpose. Vague names (**Utils, Helper, Manager**) are a cohesion smell: if the name doesn't reveal a purpose, the module usually doesn't have one. DDD **bounded contexts** exist precisely to give each module a clearly scoped responsibility.",
+        "The two interact: **high cohesion can expose coupling** — a beautifully cohesive BillingService that ten services call directly makes the whole system tightly coupled to billing; and **loose coupling can obscure cohesion** — user registration scattered across five 'decoupled' services leaves the business process with no clear owner: modular on paper, chaotic in practice.",
+        "Classic patterns for loose coupling + high cohesion: **Observer**, **Adapter**, **Strategy**, and **DDD bounded contexts**."
+      ],
+      "decisionRule": "Design starts with one question — 'what kind of change is this system likely to face?' — then dial coupling accordingly: tighter when simplicity and speed matter; looser when change is constant; and always pair loose coupling with high cohesion, or you get a system that's modular on paper but chaotic in practice.",
+      "quotableNumbers": [],
+      "tags": ["coupling", "cohesion", "software-design", "domain-driven-design", "modularity"]
+    },
+    {
+      "id": "non-functional-requirements-part-2",
+      "title": "Non-Functional Requirements (Part 2)",
+      "company": "ByteByteGo",
+      "group": "Architecture & Trade-offs",
+      "pdfFile": "harvest/ByteByteGo/Non-Functional Requirements_ The Backbone of Great Software - Part 2.pdf",
+      "tldr": "A working catalog of the key NFRs — latency, throughput, scalability, capacity, availability, resiliency/fault tolerance, disaster recovery, durability — with the metrics used to quantify each. Core insight: functional requirements say what the system does; NFRs say how well it must do it, and they directly drive architecture choices because optimizing one NFR often degrades another.",
+      "bullets": [
+        "NFRs trade off against each other: **encryption vs performance** (CPU-intensive), **ultra-low latency vs resource cost**, **performance vs maintainability**. State the trade-off, then balance per project goals — and NFRs drive architecture (microservices for availability, plugin designs for modifiability).",
+        "**Latency**: measure with **p95/p99 percentiles** (mean is misleading with outliers) and **TTFB**. Drivers: network overhead, physical distance, TLS handshakes, thread contention, unindexed queries, DB locks, and accumulated hops across **multiple service calls** in microservices.",
+        "**Throughput** (RPS/TPS/QPS) measures capacity, not speed: low response time does NOT imply high throughput if the system can't handle concurrency. Bottlenecks: CPU/memory saturation, slow queries and lock contention, disk and network I/O, thread/connection pool limits, third-party **rate limits**.",
+        "**Scalability**: **horizontal (scale out)** — add nodes/shards; continuously addable capacity and more fault-tolerant, but adds orchestration complexity and network overhead. **Vertical (scale up)** — bigger machine; simple, but hard hardware ceiling and expensive at the top end.",
+        "**Capacity planning**: find the volume where latency spikes and throughput drops by **load-testing until the system shows stress**, and extrapolating growth from past spikes plus known events. Goal: avoid both over-provisioning (wasted cost) and under-provisioning (outages).",
+        "**Availability** targets map to downtime budgets (see the nines table in numbers); improving it leans on monitoring, health checks with auto-restart (Kubernetes), and auto-routing away from unhealthy nodes. **Resiliency** = recover after failure; **fault tolerance** = keep operating seamlessly despite failure. Adopt 'everything fails, all the time' — Netflix's **Chaos Monkey** randomly kills production instances to prove it.",
+        "**Disaster recovery** is driven by two metrics: **RTO** (max acceptable time offline — shorter means costlier automated failover) and **RPO** (max acceptable data loss measured in time — tighter means more frequent/real-time replication). **Durability** = once committed, data survives crashes."
+      ],
+      "decisionRule": "Quantify every NFR with a number and name its cost — p99 latency not averages, nines of availability as downtime-per-year, RTO/RPO for disaster recovery — because each extra nine or tighter objective multiplies cost and complexity, and optimizing one NFR almost always taxes another.",
+      "quotableNumbers": [
+        {"number": "99.9% = 8.76 hours", "context": "downtime per year at three nines — acceptable for many web apps"},
+        {"number": "99.99% = 52.56 minutes", "context": "downtime per year at four nines — mission-critical services, e-commerce, financial apps"},
+        {"number": "99.999% = 5.26 minutes", "context": "downtime per year at five nines — emergency response, large financial processors"},
+        {"number": "RTO 4 hours / RPO 1 hour", "context": "example DR objectives: restore within 4 hours; lose at most 1 hour of data"}
+      ],
+      "tags": ["non-functional-requirements", "availability", "scalability", "latency", "disaster-recovery"]
+    },
+    {
+      "id": "data-replication-key-component",
+      "title": "Data Replication: Key Component for Large-Scale Systems",
+      "company": "ByteByteGo",
+      "group": "Replication, Caching & Partitioning",
+      "pdfFile": "harvest/ByteByteGo/Data Replication_ A Key Component for Building Large-Scale Distributed Systems.pdf",
+      "tldr": "Part 1 of a replication series: why you replicate (durability, availability, throughput, latency) and a deep dive into leader-follower replication. The core insight is that the sync vs async replication choice is a direct consistency-vs-performance trade, and async's replication lag creates specific, nameable consistency bugs you must mitigate.",
+      "bullets": [
+        "Four reasons to replicate: **durability** (data survives a server loss — backups alone are insufficient because they're periodic and restore is slow), **availability** (warm standbys enable fast failover), **throughput** (spread reads/writes across replicas), and **latency** (geo-replication puts data near users).",
+        "**Leader-follower replication**: the leader handles all writes, reads can go to any node including followers — the default model for balancing load on read-heavy systems.",
+        "**Synchronous replication** waits for follower acknowledgement before completing a write: strong consistency, but extra round trips add write latency — painful at high write volume or across geographic distance. **Asynchronous replication** completes the write immediately: much faster, but you risk losing recent writes if the leader dies before replication, and there's a **replication lag** window of inconsistency.",
+        "Replication lag causes two classic bugs: **read-your-own-write** inconsistency (user uploads a profile photo, immediately reads from a lagging follower, sees the old photo — fix by routing reads-after-writes to the leader) and **inconsistent reads across replicas** (a round-robin load balancer returns different values for the same key from different followers).",
+        "**Consistency models** constrain replication choices: **linearizability** (reads instantly reflect latest writes) effectively requires synchronous replication; **sequential** and **causal consistency** progressively relax ordering, allowing more async flexibility at the cost of stale-read risk.",
+        "**Tunable consistency**: modern systems let you pick consistency per operation — strong/sync for financial transactions and login flows, eventual/async for analytics and non-critical updates.",
+        "Failure handling: **follower failure** — health-check, redirect traffic to healthy replicas (watch for cascading overload if survivors are near capacity); **leader failure** — heartbeat detection plus manual promotion or automated election (**Raft**, used in etcd; **Paxos**, used in CockroachDB), with a temporary write outage during the election."
+      ],
+      "decisionRule": "Default to asynchronous leader-follower replication for performance, then patch the consistency holes surgically — route reads-after-writes to the leader and reserve synchronous replication for the few operations (payments, logins) that truly need it.",
+      "quotableNumbers": [
+        {"number": "30 ms vs 200 ms", "context": "user latency to a nearby regional data center vs cross-continent — the case for geo-replication"}
+      ],
+      "tags": ["replication", "leader-follower", "consistency", "replication-lag", "failover"]
+    },
+    {
+      "id": "how-to-choose-replication-strategy",
+      "title": "How to Choose a Replication Strategy",
+      "company": "ByteByteGo",
+      "group": "Replication, Caching & Partitioning",
+      "pdfFile": "harvest/ByteByteGo/How to Choose a Replication Strategy.pdf",
+      "tldr": "Part 2 of the series: multi-leader and leaderless (quorum) replication, then a selection framework comparing all three strategies. The core comparison: leader-follower = strong consistency / low write availability / low complexity; multi-leader = weak consistency / high write availability / high complexity; leaderless = weak consistency / high write availability / moderate complexity.",
+      "bullets": [
+        "**Multi-leader replication**: multiple nodes accept writes and replicate to each other — its primary advantage is **write availability** (one leader's failure doesn't halt writes, unlike leader-follower where writes stop until election completes). Best for global apps (write to a nearby leader), zero-downtime requirements, and write-heavy loads.",
+        "Multi-leader's cost is **write conflicts** when two leaders modify the same data concurrently. Resolution options: **Last Write Wins** (simple but silently discards updates), **CRDTs** (data types that merge automatically — counters, sets, lists), **Operational Transformation** (real-time collaborative editors), **application-specific resolution**, or **partitioning data across leaders** to avoid conflicts entirely.",
+        "**Leaderless replication** uses **quorums**: with n nodes, a write needs **w** acknowledgements and a read queries **r** nodes. The rule for strong consistency is **w + r > n**, guaranteeing every read overlaps with the latest write. Example: n=3, w=2, r=2 tolerates one node down for both reads and writes.",
+        "Quorum tuning intuition: r = n guarantees fresh reads but reads are slow/fragile; w = n means any r works but writes block on every node. **Cassandra** is the canonical example — quorum reads/writes, timestamp-based conflict resolution, tunable consistency from eventual to strong.",
+        "Summary comparison: **leader-follower** = strong consistency, low write availability, low complexity; **multi-leader** = weak consistency, high write availability, high complexity; **leaderless** = weak consistency, high write availability, moderate complexity.",
+        "Selection factors: **consistency needs** (strong → sync leader-follower), **geographic distribution** (multi-leader/leaderless tolerate network delays better — also mind cross-border data regulations), **read/write workload** (read-heavy → leader-follower with read replicas; write-heavy → multi-leader or leaderless), and **replication factor** (3 is the typical sweet spot).",
+        "Worked examples: **online retail** (strong consistency for orders, read-heavy, multi-region) → leader-follower; **gaming** (latency-sensitive, single region) → multi-leader; **ride sharing** (eventual consistency OK, write-heavy, cost-sensitive) → leaderless."
+      ],
+      "decisionRule": "Pick by workload and availability needs: read-heavy with strong consistency → leader-follower; write-heavy or can't-stop-writing → multi-leader if you can stomach conflict resolution, leaderless with w + r > n quorums if you want high availability with moderate complexity.",
+      "quotableNumbers": [
+        {"number": "w + r > n", "context": "quorum condition for strong consistency in leaderless replication"},
+        {"number": "3", "context": "typical replication factor balancing durability/availability against storage cost"}
+      ],
+      "tags": ["replication", "multi-leader", "leaderless", "quorum", "conflict-resolution"]
+    },
+    {
+      "id": "distributed-caching-high-performance",
+      "title": "Distributed Caching: The Secret to High-Performance Applications",
+      "company": "ByteByteGo",
+      "group": "Replication, Caching & Partitioning",
+      "pdfFile": "harvest/ByteByteGo/Distributed Caching_ The Secret to High-Performance Applications.pdf",
+      "tldr": "End-to-end tour of distributed caching: why single-node caches fail at scale, the architecture (cache nodes, client libraries, consistent hashing, replication), three hosting models, four caching strategies, and the consistency/invalidation challenges. The core insight is that each caching strategy is a different position on the read-latency vs write-latency vs consistency vs durability trade-off.",
+      "bullets": [
+        "Single-node caching breaks at scale for four reasons: **scalability constraints** (bound by one server's memory/CPU), **single point of failure** (cache down → all traffic hits the database), **inefficient load management** under spikes, and **no redundancy**. Distributed caching fixes all four by sharding data across nodes and replicating it.",
+        "Architecture components: **cache nodes** (each holds a shard), a **client library** that routes requests using **consistent hashing** (minimizes data movement when nodes join/leave), and **replication** to a backup node so a primary's failure doesn't interrupt service.",
+        "Hosting trade-off: **dedicated cache cluster** = independent scaling and resource isolation, but network hop latency and higher cost; **co-located caching** (cache on the app server) = lowest latency and cheapest, but resource contention; **cloud-managed** (ElastiCache) = auto-scaling, multi-AZ, but vendor lock-in.",
+        "**Cache-aside (lazy loading)**: app checks cache, on miss reads DB and populates cache — simple, memory-efficient (caches only what's actually requested), but cold-start latency on misses. **Read-through**: the cache itself fetches from the DB on a miss — moves cache logic out of application code.",
+        "**Write-through**: every write goes to cache and DB together — always consistent, ideal when reads follow writes quickly, but every write pays double latency. **Write-back (write-behind)**: writes land in the cache and flush to the DB asynchronously in batches — best write performance, but risks **data loss if the cache fails before flushing**.",
+        "Consistency toolkit for write-heavy systems: **TTL-based invalidation** (too short → excessive misses; too long → stale data), **event-based invalidation** (DB update events trigger cache invalidation), **write-through** for always-in-sync data, and **leasing** (only one operation can modify a cache entry at a time).",
+        "**Network partitions** cause split-brain — isolated cache nodes serving divergent data; mitigate with partition-aware design and quorum-based consensus. Product picks: **Redis** = rich data structures, LRU/LFU eviction, optional persistence — analytics, sessions, leaderboards, pub/sub; **Memcached** = simpler and lighter for pure non-persistent caching."
+      ],
+      "decisionRule": "Default to cache-aside with TTLs for read-heavy workloads; upgrade to write-through when reads must immediately see writes, and only use write-back for write-intensive paths where you can tolerate losing a few seconds of unflushed writes.",
+      "quotableNumbers": [],
+      "tags": ["caching", "cache-aside", "write-through", "redis", "cache-invalidation"]
+    },
+    {
+      "id": "consistent-hashing-101",
+      "title": "Consistent Hashing 101",
+      "company": "ByteByteGo",
+      "group": "Replication, Caching & Partitioning",
+      "pdfFile": "harvest/ByteByteGo/Consistent Hashing 101_ How Modern Systems Handle Growth and Failure.pdf",
+      "tldr": "Why hash(key) % N breaks when N changes, and how consistent hashing's ring plus virtual nodes fix it. The core property is 'minimal disruption': when a node joins or leaves, only the keys in one arc of the ring move, instead of nearly every key being remapped.",
+      "bullets": [
+        "**The problem with modulo hashing**: with hash(key) % N, changing N (adding a 5th server to 4) remaps almost every key. For caches that means a flood of misses hammering the database; for storage systems it means massive physical data migration. The same near-total reshuffle happens when a node fails.",
+        "**The hash ring**: map both servers and keys onto the same circular hash space (0 to 2^32 − 1 wrapped into a circle) using the same hash function. A key belongs to the **first server clockwise** from its position; each server owns the arc between itself and its predecessor.",
+        "**Minimal disruption**: adding node D between A and B moves only the keys in the A–D arc to D — everything else stays put. Removing/failing node B shifts only B's keys to the next node clockwise.",
+        "**The plain ring's weakness is uneven load**: hash placement is random, so if two servers land close together, the third owns a huge arc and becomes a hotspot — worst in small clusters where randomness dominates.",
+        "**Virtual nodes (vnodes)** fix imbalance: each physical server is placed at many ring positions (~100), so the key space splits into many small chunks spread across machines. Bonus: in **heterogeneous clusters**, assign vnodes proportional to capacity — 200 vnodes for a powerful machine vs 50 for a weak one.",
+        "Operational realities: in production, key reassignment after failure is mostly an **ownership transfer because replication already has the data elsewhere**; node additions migrate data in controlled batches. Remaining challenges: ring metadata distribution, fast 'next node clockwise' lookup (sorted structures/binary search), skewed key distributions.",
+        "Real-world adoption: consistent hashing underpins **memcached** client sharding, **Cassandra**, **Riak**, and **Amazon Dynamo**."
+      ],
+      "decisionRule": "Whenever you shard a cache or datastore across nodes that can be added or removed, use consistent hashing with virtual nodes — never modulo — so scaling events move only ~1/N of the keys instead of nearly all of them.",
+      "quotableNumbers": [
+        {"number": "~100", "context": "virtual node positions per physical server to smooth load"},
+        {"number": "200 vs 50", "context": "vnode counts for high- vs low-capacity machines in a heterogeneous cluster"}
+      ],
+      "tags": ["consistent-hashing", "partitioning", "virtual-nodes", "sharding", "scalability"]
+    },
+    {
+      "id": "database-indexing-strategies-part-1",
+      "title": "Database Indexing Strategies (Part 1)",
+      "company": "ByteByteGo",
+      "group": "Storage & Performance",
+      "pdfFile": "harvest/ByteByteGo/Database Indexing Strategies - ByteByteGo Newsletter.pdf",
+      "tldr": "A tour of index architecture in relational databases: how B-Trees/B+ Trees work, clustered vs non-clustered indexes, and the main index types (primary, secondary, composite, covering, unique, filtered) plus specialized ones (bitmap, spatial, full-text). The core insight is that indexing is a balancing act — every index speeds reads but taxes writes and storage, so index design must follow the query workload.",
+      "bullets": [
+        "**B+ Tree** is the default index structure in relational databases: data pointers live only in **leaf nodes** (internal nodes hold just keys, so fan-out is high and the tree stays shallow), and leaves are **linked in a list**, making range scans efficient — find the start, then walk the chain.",
+        "A **clustered index** physically orders rows on disk, so there can be only **one per table**; pick a **unique, sequential key** (typically the primary key) to avoid page splits on insert. Note **PostgreSQL is the exception** — it stores rows in insertion order; the CLUSTER command reorders once but is not maintained.",
+        "A **non-clustered (secondary) index** is a separate structure of key→row pointers, so a lookup costs **at least two reads** (index, then data). You can have many per table, but each one slows every write.",
+        "For a **composite index**, column order is critical: an index on (lastName, firstName) serves queries on both columns or on the **leftmost prefix** (lastName alone), but not firstName alone. Put the most selective column first.",
+        "A **covering index** includes every column the query touches, letting the engine answer from the index alone with **no table lookup** — great for large tables returning few columns, at the cost of a bigger index and heavier write maintenance.",
+        "**Filtered (partial) indexes** index only rows matching a predicate (e.g., in-stock products), cutting index size and maintenance — supported by SQL Server and PostgreSQL, **not MySQL**.",
+        "Specialized non-B+Tree indexes: **bitmap indexes** for low-cardinality columns with bitwise AND/OR/NOT filtering (static, read-heavy data only); **spatial indexes** (R-trees with bounding boxes) for geo queries; **full-text/inverted indexes** that tokenize text and map word→documents."
+      ],
+      "decisionRule": "Index design is workload-driven: cluster on a sequential unique key, add secondary indexes only for proven query patterns, and remember every index you add trades write speed and storage for read speed.",
+      "quotableNumbers": [
+        {"number": "O(log N)", "context": "lookup/insert/delete complexity of B-Tree and B+ Tree indexes"},
+        {"number": "2+ disk reads", "context": "minimum cost of a non-clustered index lookup (index read, then data read)"}
+      ],
+      "tags": ["indexing", "b+tree", "databases", "clustered-index", "query-optimization"]
+    },
+    {
+      "id": "database-indexing-strategies-part-2",
+      "title": "Database Indexing Strategies (Part 2)",
+      "company": "ByteByteGo",
+      "group": "Storage & Performance",
+      "pdfFile": "harvest/ByteByteGo/Database Indexing Strategies - Part 2.pdf",
+      "tldr": "Continues Part 1 into NoSQL territory (LSM Trees and secondary indexes on them), maps index types to concrete use cases (point/range/prefix/geo/text lookups, JOIN/ORDER BY/GROUP BY), and closes with SARGable query rules and 8 indexing best practices. Core insight: pick the index for the access pattern, write queries the optimizer can actually use, and continuously prune the index set.",
+      "bullets": [
+        "**LSM Trees** (key-value and wide-column NoSQL stores) are optimized for **write-intensive workloads**: writes land in an in-memory **MemTable**, which flushes to immutable on-disk **SSTables**; reads are more complex and rely on **Bloom filters** and partition indexes to stay fast.",
+        "A **secondary index in an LSM database** is just another LSM tree mapping field-value → primary keys; because LSM data is immutable, updates become write-new + delete-old and **both the primary store and the index must be updated together**, which adds consistency complexity and write cost.",
+        "Match the index to the access pattern: **point lookup** (non-clustered index on the filter column), **range lookup** (index on created_time for 'latest 20 posts'), **prefix search** (B-tree or a **trie** for autocomplete), **geo lookup** (**geohash** — points in proximity share a hash prefix, so radius search becomes a prefix match), **text search** (full-text index).",
+        "Indexes also accelerate **JOIN** (index both join columns), **ORDER BY** (index stores rows pre-sorted, eliminating sort cost), and **GROUP BY** on frequently grouped columns.",
+        "Write **SARGable** queries: never wrap an indexed column in a function — `WHERE YEAR(date_column) = 2023` kills index use; rewrite as `WHERE date_column BETWEEN '2023-01-01' AND '2023-12-31'`. Operators =, >, <, BETWEEN are SARGable; NOT, <>, and LIKE with a **leading wildcard** generally are not.",
+        "Composite-index prefix rule from the SARGable angle: with an index on (A, B, C), queries filtering A or A+B can use it, but **B and C alone cannot** — always verify with EXPLAIN.",
+        "**8 best practices**: determine needs from the read-to-write ratio first; index columns used in WHERE/JOIN/ORDER BY with **high uniqueness**; weigh maintenance cost on frequently-updated columns; limit total index count; use composite and covering indexes deliberately; monitor and rebuild fragmented indexes; and **drop unused indexes** (PostgreSQL: pg_stat_user_indexes)."
+      ],
+      "decisionRule": "Choose B-Tree indexes for read-heavy relational workloads and LSM Trees for write-heavy ingestion; then make the indexes actually usable by writing SARGable queries (no functions on indexed columns, respect composite prefix order) and ruthlessly dropping indexes the workload doesn't use.",
+      "quotableNumbers": [],
+      "tags": ["indexing", "lsm-tree", "nosql", "sargable", "query-optimization"]
+    },
+    {
+      "id": "database-index-internals-data-structures",
+      "title": "Database Index Internals: The Data Structures",
+      "company": "ByteByteGo",
+      "group": "Storage & Performance",
+      "pdfFile": "harvest/ByteByteGo/Database Index Internals_ Understanding the Data Structures.pdf",
+      "tldr": "A structure-by-structure breakdown of the four data structures behind database indexes — B/B+ Trees, hash indexes, bitmap indexes, and inverted indexes — including how each works mechanically and where each fails. Core insight: every index structure balances four factors (space, read speed, write overhead, concurrency), and no single structure wins on all of them.",
+      "bullets": [
+        "Judge any index structure on **four factors**: how much **space** it uses, how fast it **reads**, how much overhead it adds to **writes**, and how well it handles **concurrency** — no structure wins across all four.",
+        "**B+ Tree**: internal nodes hold only navigation keys, all data pointers live in linked leaf nodes, and high fan-out keeps the tree at **3-4 levels even for millions of rows**, so a root-to-leaf lookup is only a few disk page reads. Range scans (BETWEEN, pagination) are cheap via the leaf chain.",
+        "B+ Tree pitfalls: useless on **low-selectivity columns** (a boolean points at most of the table, so the engine prefers a full scan), and inserts degrade with **random keys like UUIDs** that cause frequent page splits, whereas sequential auto-increment keys append to the rightmost leaf.",
+        "**Hash index**: hash function maps key → bucket → row pointer, giving **near-constant-time exact-match** lookups with stable performance as data grows. Best for in-memory tables, session-token/API-key lookups, and hash-based sharding.",
+        "Hash index limits: **no key ordering**, so range queries and sorting fall back to full scans; skewed data causes bucket clustering; resizing/rehashing causes **write-amplification spikes**; and it consumes more memory than trees.",
+        "**Bitmap index**: one bit vector per distinct value; multi-column filters resolve via **bitwise AND/OR/NOT** without touching the base table — ideal for low-cardinality columns (gender, status, region) in **read-heavy analytics**, but terrible for transactional writes and high-cardinality columns.",
+        "**Inverted index**: flips row→value into **term→document list** after tokenization; powers full-text search in MySQL FULLTEXT, PostgreSQL tsvector, and Elasticsearch (built entirely around it). Updates rewrite posting lists, so they're often batched; it needs careful **stemming/stopword** configuration and is not a substitute for structured equality/range indexes."
+      ],
+      "decisionRule": "Pick the structure by access pattern: B+ Tree for range scans and general-purpose selective lookups, hash for pure exact-match equality, bitmap for low-cardinality analytical filtering, inverted for full-text — and never use a structure outside its pattern.",
+      "quotableNumbers": [
+        {"number": "3-4 levels", "context": "typical B+ Tree height even for millions of rows, thanks to high fan-out"}
+      ],
+      "tags": ["index-internals", "b+tree", "hash-index", "bitmap-index", "inverted-index"]
+    },
+    {
+      "id": "how-to-build-high-throughput-systems",
+      "title": "How to Build High Throughput Systems",
+      "company": "ByteByteGo",
+      "group": "Storage & Performance",
+      "pdfFile": "harvest/ByteByteGo/How to Build High Throughput Systems.pdf",
+      "tldr": "A strategy catalog for maximizing the work a system completes per unit time: horizontal scaling, concurrency, I/O optimization, caching, async queues, and database-level techniques. Core insight: throughput and latency are distinct, often opposing metrics — batching and queueing raise throughput at the cost of per-request latency — and the right design starts by measuring the actual bottleneck.",
+      "bullets": [
+        "**Throughput ≠ latency**: latency is time per operation, throughput is operations per time, and they trade off — **batching** many operations raises throughput but adds waiting time per item. State this trade-off explicitly when proposing batching or queues.",
+        "**Horizontal scaling** multiplies capacity (1 server at 1,000 req/s → 10 servers at ~10,000 req/s in theory) but only works when servers operate **independently with minimal coordination**; partition requests intelligently (by region or customer ID) and load-balance so no server is hot while others idle.",
+        "**Concurrency vs parallelism**: concurrency interleaves tasks in progress, parallelism executes simultaneously on multiple cores. **Async I/O** is the win for I/O-bound work; but shared-state contention can negate parallelism — minimize shared state, use fine-grained locking or lock-free structures.",
+        "**I/O optimizations**: use persistent connections and batch small requests into larger ones, cache hot data in memory (Redis for query results, CDN for static assets), and **batch disk writes** — sequential flushes beat many small random writes.",
+        "**Message queues** decouple producers from consumers: the front end acknowledges fast and enqueues; background workers drain at their own pace. Queues also absorb traffic bursts — work succeeds even when workers are temporarily overloaded.",
+        "**Database throughput** depends on workload type: **OLTP** wants many small concurrent transactions — index properly, keep transactions short to minimize lock contention, shard to parallelize, add **read replicas** when reads vastly outnumber writes; **OLAP** wants scan throughput — use **columnar storage** and parallel query execution.",
+        "**Three fundamental trade-offs**: throughput vs latency (batching), consistency vs throughput (eventual consistency avoids cross-server coordination), and throughput vs **complexity** (caches, queues, and shards each add operational burden; a simpler lower-throughput system that meets requirements is often the better choice).",
+        "Practical order of operations: **measure first** (profile to find the actual bottleneck), match hardware to workload, design for horizontal scale from day one, then layer caching, queues, and DB optimizations — and **load test** with realistic traffic before production."
+      ],
+      "decisionRule": "Never optimize throughput blindly: measure the bottleneck first, then apply batching, async queues, and eventual consistency knowingly — each buys throughput by sacrificing latency, consistency, or simplicity, and a simpler system that meets requirements beats a faster one you can't operate.",
+      "quotableNumbers": [
+        {"number": "1,000 → 10,000 req/s", "context": "theoretical capacity gain from scaling one server to ten"}
+      ],
+      "tags": ["throughput", "scalability", "caching", "message-queues", "sharding"]
+    },
+    {
+      "id": "capacity-planning",
+      "title": "Capacity Planning",
+      "company": "ByteByteGo",
+      "group": "Reliability & Scale",
+      "pdfFile": "harvest/ByteByteGo/Capacity Planning - by ByteByteGo and Diego Ballona.pdf",
+      "tldr": "A Spotify engineering manager's framework for back-of-envelope capacity estimation: derive throughput (QPS) from requirements or DAU, size requests, compute bandwidth and storage, then use caching and retention policies to cut costs. The core insight is to think in round numbers, round up conservatively, and then encode your assumptions as production alerts so reality can correct the plan.",
+      "bullets": [
+        "**Throughput estimation has two paths**: if requirements hint at scale (10M sensors reporting every 5s), derive QPS directly; if not, derive from **DAU × interactions/day ÷ 86,400 seconds** (e.g., 500M DAU × 10 timeline views = 5B pageviews/day ≈ 60k QPS). Then scale sibling features as percentages of the anchor (profile views = 20% of 60k = 12k QPS; posts = 10% who post once daily = 6k QPS).",
+        "**Peak QPS dictates capacity**, not average. Use a Pareto assumption — 80% of daily traffic in an 8-hour window — which turns 60k average QPS into ~138k peak QPS. Identify **event-driven peaks** (launches) and **time-driven peaks** (working hours), overprovision initially, then adjust from monitoring.",
+        "**Server count = QPS ÷ per-instance capacity**: with 200ms response time, each worker handles 5 QPS; 32 workers/instance = 160 QPS/instance; so 2M QPS needs ~12.5k instances. State worker math explicitly — interviewers probe it.",
+        "**Request sizing anchors**: a small JSON payload is ~0.5KB with HTTP headers (200-400 bytes of headers alone); a text post ~1KB; image ~300KB compressed; video ~1MB; a blended 10-post mix averages ~200KB/post. Format choices matter: **Protobuf** is faster to serialize than JSON but less debuggable.",
+        "**Egress is the silent killer**: naively rendering full media to every timeline view gives ~250GB/s egress; trimming text excerpts, 30KB thumbnail placeholders with progressive loading, and no-autoplay video cuts capacity ~67% before any caching.",
+        "**Storage at rest**: 2M QPS × 0.1KB = 200MB/s ≈ 17TB/day raw. Optimize with **deduplication** (store only significant changes: minute-granularity cuts 17TB to ~1.5TB/day) and **retention/granularity policies** (keep raw events 1 month, then hourly rollups — only ~1.8MB/year per sensor).",
+        "**Cache write strategies trade latency vs durability**: **write-through** (cache+DB together, slower writes, safe), **write-around** (DB only, cheap writes but slow first reads), **write-back** (cache only, fastest writes but data loss risk). For reads, exploit the **80/20 rule** — 20% of content serves 80% of reads, so CDN-cache that hot set.",
+        "**Operate the plan**: encode design assumptions (e.g., 20% cache hit rate) as production alerts so drift is caught proactively, and run 'what-if' analyses before major changes."
+      ],
+      "decisionRule": "Estimate in round numbers and round up: derive average QPS from DAU, multiply by ~2x for peak (80/20 rule), divide by per-server QPS for fleet size — then encode every assumption as a production alert so monitoring corrects the guess.",
+      "quotableNumbers": [
+        {"number": "86,400", "context": "seconds per day — the universal divisor for converting daily volume to per-second rates"},
+        {"number": "60k QPS", "context": "500M DAU × 10 pageviews/day (5B/day ÷ 86,400, rounded up)"},
+        {"number": "138k peak QPS", "context": "peak when 80% of 5B daily pageviews land in an 8-hour window (~2.3× average)"},
+        {"number": "5 QPS per worker", "context": "one worker at 200ms average response time (1000ms ÷ 200ms)"},
+        {"number": "160 QPS per instance", "context": "app server with 32 workers × 5 QPS each"},
+        {"number": "12.5k instances", "context": "servers needed for 2M QPS at 160 QPS/instance"},
+        {"number": "0.5KB / 1KB / 300KB / 1MB", "context": "anchor sizes: JSON request / text post / compressed image / short video"},
+        {"number": "17TB/day", "context": "raw storage for 2M QPS at 0.1KB per data point"},
+        {"number": "80/20", "context": "20% of content serves 80% of reads (cache it); 80% of traffic in 20% of the day (peak)"}
+      ],
+      "tags": ["capacity-planning", "estimation", "qps", "storage", "caching"]
+    },
+    {
+      "id": "top-strategies-reduce-latency",
+      "title": "Top Strategies to Reduce Latency",
+      "company": "ByteByteGo",
+      "group": "Reliability & Scale",
+      "pdfFile": "harvest/ByteByteGo/Top Strategies to Reduce Latency - ByteByteGo Newsletter.pdf",
+      "tldr": "A catalog of eight latency-reduction strategies — caching, CDNs, load balancing, async processing, database indexing, compression, connection reuse, and pre-caching — organized around where latency originates: network, server, or client. The framework: first classify which latency type dominates, then apply the strategy that attacks that layer.",
+      "bullets": [
+        "**Latency vs bandwidth vs throughput**: bandwidth is capacity, throughput is actual usage, latency is delay — high bandwidth does not fix high latency. Classify the bottleneck first: **network latency** (distance, hops, congestion, handshake overhead), **server latency** (overload, slow queries, missing indexes), or **client-side latency** (rendering, blocking JS).",
+        "**Caching** attacks repeated fetches: set **TTLs**, invalidate stale data with versioned keys, cache only frequently-accessed or expensive-to-compute data, layer browser + server caches, and monitor hit/miss ratio.",
+        "**CDNs** attack physical distance for static assets: replicate content to edge servers, route users to the nearest edge, pull-through on miss; bonus benefits include origin offload, DDoS protection, and lower egress cost.",
+        "**Load balancing** attacks server overload; know the algorithm trade-offs: **round-robin** (simple, assumes equal servers), **weighted round-robin** (heterogeneous capacity), **least connections** (adapts to varying request cost), **IP hash** (session stickiness), **geographic** (locality). Health checks keep traffic off dead nodes.",
+        "**Async processing** attacks blocking work: move slow tasks (email, payments, analytics) to queues so the request path returns immediately — improves perceived latency and resource utilization.",
+        "**Database indexing** attacks slow queries by avoiding full table scans: **clustered** (one per table, physical order), **non-clustered** (separate pointer structure), **composite** (multi-column WHERE/ORDER BY), **full-text** (keyword search).",
+        "**Compression and connection reuse** attack transfer overhead: Brotli/Gzip for text, WebP/AVIF for images, pre-compress static assets at build time. HTTP keep-alive avoids repeated TCP handshakes; **HTTP/2 multiplexing** eliminates HTTP/1.1's head-of-line blocking by interleaving frames over one connection.",
+        "**Pre-caching** attacks predictable future requests: PWAs pre-store assets via service workers, e-commerce pre-fetches product details on hover, video players buffer the next segment."
+      ],
+      "decisionRule": "Diagnose which layer dominates your latency — network, server, or client — and apply the matching fix: CDN/compression/keep-alive for network, caching/indexing/load-balancing/async for server, lazy loading and smaller payloads for client; never apply all eight blindly.",
+      "quotableNumbers": [
+        {"number": "-0.2% to -0.6%", "context": "drop in searches per user when Google slowed results by 100-400ms"},
+        {"number": "$1.6 billion/year", "context": "Amazon's estimated sales loss from a 1-second latency increase (~1% of sales per 100ms)"}
+      ],
+      "tags": ["latency", "caching", "cdn", "load-balancing", "performance"]
+    },
+    {
+      "id": "common-failure-causes",
+      "title": "Common Failure Causes in Distributed Systems",
+      "company": "ByteByteGo",
+      "group": "Reliability & Scale",
+      "pdfFile": "harvest/ByteByteGo/Common Failure Causes - ByteByteGo Newsletter.pdf",
+      "tldr": "An excerpt from Roberto Vitillo's 'Understanding Distributed Systems' cataloging eight root causes of failure: hardware faults, incorrect error handling, configuration changes, single points of failure, network faults, resource leaks, load pressure, and cascading failures. The surprising insight is that systems usually die from mundane causes — bad error handlers and config changes — not exotic hardware failures.",
+      "bullets": [
+        "A **failure** is when the system stops meeting its spec; it's caused by a **fault** in an internal component or external dependency. Fault tolerance starts with cataloging what can go wrong.",
+        "**Incorrect error handling**, not hardware, is the top killer: a 2014 study of five popular distributed data stores found the **majority of catastrophic failures came from mishandling non-fatal errors** — ignored errors, overly generic catch-and-abort handlers, and stubs with FIXME/TODO comments — most detectable with simple tests.",
+        "**Configuration changes are a leading cause of catastrophic outages** because their effects can be delayed: a value read lazily may only take effect hours or days later. Treat config like code — version-controlled, tested, validated preventively at change time.",
+        "**Single points of failure**: humans executing manual multi-step runbooks, **DNS** (expired domains, root-domain outages), and **expiring TLS certificates** are classic SPOFs. Identify them at design time by asking 'what if this component failed?'; architect them away with redundancy, or failing that, shrink their **blast radius**.",
+        "**Network faults and slow calls** are the 'silent killers': a client can't distinguish a slow response from a lost one, so it waits — these **gray failures** are subtle and can drag a whole system down. Timeouts are mandatory.",
+        "**Resource leaks** make processes slow (indistinguishable from down): memory leaks happen even in GC'd languages; thread pools drain when blocking calls lack timeouts; even async clients exhaust **socket pools** when connections without timeouts are never returned.",
+        "**Load pressure** comes from seasonality, abusive expensive requests (scrapers), and DDoS; organic growth allows scaling out, but sudden floods may require **rejecting requests (load shedding)** rather than autoscaling.",
+        "**Cascading failures** spread virally: two replicas at 50 tps each; one dies, the survivor takes 100 tps, slows, times out, gets removed too; when the failed node returns it's flooded and dies again — a **metastable** feedback loop that persists after the original fault is gone and usually needs a drastic action (temporarily blocking all traffic) to break.",
+        "**Managing risk**: don't address every fault — score each as **probability × impact** and tackle high-likelihood/high-impact faults first."
+      ],
+      "decisionRule": "Assume mundane faults (error-handling bugs, config changes, missing timeouts) will hurt you before exotic ones; rank faults by probability × impact, put a timeout on every remote call, and design to contain blast radius so one fault can't go metastable.",
+      "quotableNumbers": [
+        {"number": "2014 study", "context": "five popular distributed data stores: majority of catastrophic failures traced to mishandled non-fatal errors"},
+        {"number": "50 tps → 100 tps", "context": "cascading-failure example: surviving replica's load doubles when its peer is removed"}
+      ],
+      "tags": ["failure-modes", "resilience", "cascading-failures", "spof", "reliability"]
+    },
+    {
+      "id": "dark-side-latency-partition-tolerance",
+      "title": "Dark Side of Distributed Systems: Latency and Partition Tolerance",
+      "company": "ByteByteGo",
+      "group": "Reliability & Scale",
+      "pdfFile": "harvest/ByteByteGo/Dark Side of Distributed Systems_ Latency and Partition Tolerance.pdf",
+      "tldr": "Explains how CAP theorem, latency, and partitions interact in real systems: partitions are non-negotiable, so the actual choice is consistency vs availability under partition, expressed through replication and consensus choices. Covers AP vs CP behavior, real-system examples (Dynamo, Cassandra, Spanner, Kafka), plus the pitfalls and best practices.",
+      "bullets": [
+        "**CAP correctly stated**: it's not 'pick any two' — partition tolerance is non-negotiable in any real distributed system, so the real decision is **C vs A during a partition**. AP systems accept writes on reachable nodes (low latency, temporary inconsistency); CP systems block or error rather than serve stale/conflicting data.",
+        "**Real-system anchors**: **Dynamo** is AP ('write-first, reconcile-later'); **Cassandra** offers tunable consistency levels per request; **Spanner** appears CA via TrueTime (atomic clocks + GPS) but that costs specialized hardware — under a genuine prolonged partition it chooses **CP**, sacrificing availability in the affected region.",
+        "**Partitions cause split-brain**: isolated node groups each believe they own the data and accept conflicting writes, corrupting state once the partition heals — the core reason partition handling must be designed in, not bolted on.",
+        "**Latency and partitions are linked**: during a partition, retries and timeouts inflate latency; in leader-based systems a leader failure triggers election during which **writes are effectively blocked**. Track **p95/p99/p999**, not averages — a 50ms median with 1% of requests over 500ms still frustrates users.",
+        "**Replication decision matrix**: **synchronous** = all replicas confirm before success (strong consistency, writes block if quorum unreachable); **asynchronous** = primary acks immediately, replicas catch up (low write latency, stale-read window). **Leader-based** (Kafka per-partition leaders) = single source of truth but needs election protocols; **leaderless** (Cassandra) = clients pick a per-request consistency level and the cluster keeps serving during partitions.",
+        "**Consensus protocols (Paxos/Raft) are CP**: they need a majority quorum to commit; if a partition splits the quorum, writes halt — consistent ordering at the cost of availability and higher latency in geo-dispersed clusters.",
+        "**Anti-patterns to call out**: treating remote calls as local (chatty microservices), demanding **global strong consistency for every operation** (cripples geo-distributed performance), immediate retries that create a **thundering herd**, and poor observability.",
+        "**Best practices**: circuit breakers + bulkheads to stop cascades, async messaging/queues (messages survive node outages), consciously choose consistency per data class (eventual for high-traffic feeds, strong for financial state), design graceful degradation for partitions (fallbacks, read-only mode), and invest in distributed tracing with p99 dashboards."
+      ],
+      "decisionRule": "Partitions will happen, so pick your CAP stance per data class, not per system: default to AP with eventual consistency for high-traffic user-facing data, reserve CP/quorum (Paxos/Raft, sync replication) for money and critical state — and say explicitly that during a partition a CP system blocks writes while an AP system serves stale data.",
+      "quotableNumbers": [
+        {"number": "50ms median / 1% > 500ms", "context": "why p99 matters: a healthy median can hide a tail that frustrates a visible share of users"}
+      ],
+      "tags": ["cap-theorem", "partition-tolerance", "replication", "consistency", "consensus"]
+    }
+  ]
+}
