@@ -6,15 +6,15 @@
 <title>Harvest Study</title>
 <style>
   :root {
-    --bg: #0f1115; --panel: #171a21; --panel2: #1e2230; --border: #2a2f3d;
-    --text: #d7dce6; --dim: #8b93a7; --accent: #5b9dff; --know: #34c98e;
-    --shaky: #f0a35e; --rule: #b88aff;
+    --bg: #ffffff; --panel: #ffffff; --panel2: #f2f4f8; --border: #dde2ea;
+    --text: #1f2430; --dim: #6b7385; --accent: #2563eb; --know: #0e9f6e;
+    --shaky: #d97706; --rule: #7c3aed;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
     font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   .wrap { max-width: 760px; margin: 0 auto; padding: 24px 20px 80px; }
-  header { position: sticky; top: 0; z-index: 10; background: rgba(15,17,21,.95);
+  header { position: sticky; top: 0; z-index: 10; background: rgba(255,255,255,.95);
     backdrop-filter: blur(6px); border-bottom: 1px solid var(--border); }
   .hwrap { max-width: 760px; margin: 0 auto; padding: 14px 20px; }
   h1 { font-size: 19px; margin: 0 0 10px; }
@@ -42,13 +42,13 @@
     background: var(--panel2); color: var(--accent); white-space: nowrap; }
   .card h2 { font-size: 17px; margin: 0; flex: 1; min-width: 200px; }
   .tags { color: var(--dim); font-size: 12px; margin-top: 6px; }
-  .tldr { color: #e3e8f2; margin: 14px 0 6px; font-size: 15px; }
+  .tldr { color: #111827; margin: 14px 0 6px; font-size: 15px; }
   ul.points { margin: 14px 0; padding-left: 22px; }
-  ul.points li { margin: 14px 0; font-size: 14.5px; color: #ccd3e0; line-height: 1.7; }
+  ul.points li { margin: 14px 0; font-size: 14.5px; color: #333b4d; line-height: 1.7; }
   ul.points li::marker { color: var(--accent); }
-  .rule { border: 1px solid var(--rule); background: rgba(184,138,255,.07);
+  .rule { border: 1px solid var(--rule); background: rgba(124,58,237,.06);
     border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 14.5px;
-    line-height: 1.65; color: #d9c4ff; }
+    line-height: 1.65; color: #4c1d95; }
   .rule b { color: var(--rule); }
   .nums { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
   .num { background: var(--panel2); border-radius: 8px; padding: 8px 12px; font-size: 12.5px;
@@ -57,8 +57,8 @@
   .actions { display: flex; gap: 8px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
   .actions button { border: 1px solid var(--border); background: var(--panel2); color: var(--text);
     border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
-  .actions .b-know.on { background: var(--know); border-color: var(--know); color: #08130e; font-weight: 600; }
-  .actions .b-shaky.on { background: var(--shaky); border-color: var(--shaky); color: #1c1206; font-weight: 600; }
+  .actions .b-know.on { background: var(--know); border-color: var(--know); color: #ffffff; font-weight: 600; }
+  .actions .b-shaky.on { background: var(--shaky); border-color: var(--shaky); color: #ffffff; font-weight: 600; }
   .actions a { margin-left: auto; color: var(--accent); font-size: 13px; text-decoration: none; }
   .actions a:hover { text-decoration: underline; }
   textarea.note { width: 100%; margin-top: 10px; background: var(--panel2); color: var(--text);
@@ -81,7 +81,7 @@
     border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 12px;
     font-family: ui-monospace, monospace; }
   .hidden { display: none !important; }
-  strong { color: #ffffff; font-weight: 600; }
+  strong { color: #000000; font-weight: 600; }
 </style>
 </head>
 <body>

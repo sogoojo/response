@@ -139,10 +139,10 @@
 <div class="overlay" id="settingsOverlay">
     <div class="scard">
         <h2>Setup</h2>
-        <p>Deploy worker.js to Cloudflare Workers (free), then paste both values below.</p>
-        <label>WORKER URL</label>
-        <input type="url" id="workerUrl" placeholder="https://your-worker.workers.dev" spellcheck="false">
-        <label>ANTHROPIC API KEY</label>
+        <p>Run locally with <code>server.js</code> (API key set on server), or use a Cloudflare Worker.</p>
+        <label>API ENDPOINT</label>
+        <input type="url" id="workerUrl" placeholder="/api (local) or https://your-worker.workers.dev" spellcheck="false">
+        <label>ANTHROPIC API KEY <span style="font-weight:400;color:#555">(leave blank if using local server)</span></label>
         <input type="password" id="apiKey" placeholder="sk-ant-..." spellcheck="false">
         <div class="serr" id="settingsErr"></div>
         <button class="save-btn" onclick="saveSettings()">Save & Start</button>
@@ -152,12 +152,17 @@
 <script>
     // ============ STATE ============
     let listening = false, paused = false, recognition = null;
-    let fullTranscript = "", context = "", monoCount = 0, cooldown = false;
+    let fullTranscript = "", context = "";
+    let sentenceBuffer = "";
+    let lastFinalTime = 0;
+    let silenceTimer = null;
     let questions = [];
     let WORKER_URL = "", API_KEY = "";
 
     try { WORKER_URL = localStorage.getItem("vqa_worker")||""; API_KEY = localStorage.getItem("vqa_key")||""; } catch(e){}
-    if (!WORKER_URL||!API_KEY) document.getElementById("settingsOverlay").classList.remove("hidden");
+    const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    if (!WORKER_URL && isLocal) WORKER_URL = "/api";
+    if (!WORKER_URL) document.getElementById("settingsOverlay").classList.remove("hidden");
     else document.getElementById("settingsOverlay").classList.add("hidden");
     document.getElementById("workerUrl").value = WORKER_URL;
     document.getElementById("apiKey").value = API_KEY;
@@ -171,8 +176,8 @@
       const w=document.getElementById("workerUrl").value.trim().replace(/\/$/,"");
       const k=document.getElementById("apiKey").value.trim();
       const err=document.getElementById("settingsErr");
-      if(!w||!k){err.style.display="block";err.textContent="Both fields required";return}
-      if(!w.startsWith("https://")){err.style.display="block";err.textContent="Worker URL must start with https://";return}
+      if(!w){err.style.display="block";err.textContent="API endpoint is required";return}
+      if(!w.startsWith("/") && !w.startsWith("https://")){err.style.display="block";err.textContent="Use /api (local) or https:// URL";return}
       WORKER_URL=w;API_KEY=k;
       try{localStorage.setItem("vqa_worker",w);localStorage.setItem("vqa_key",k)}catch(e){}
       err.style.display="none";
@@ -243,26 +248,58 @@
       "has","have","had","which","whom",
     ];
 
-    function isRealQuestion(text) {
+    function splitSentences(text) {
+      return text
+        .replace(/([.?!])\s+/g, "$1\n")
+        .split("\n")
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+
+    function extractQuestion(text) {
       const raw = text.trim();
       const t = raw.toLowerCase().replace(/[?.!,;:]+$/g, "").trim();
       const words = t.split(/\s+/);
 
-      // Too short
-      if (words.length < 3) return false;
+      if (words.length < 3) return null;
+      if (SKIP.has(t)) return null;
+      if (raw.endsWith("?")) return raw;
 
-      // Skip rhetorical
-      if (SKIP.has(t)) return false;
-
-      // Has explicit question mark
-      if (raw.endsWith("?")) return true;
-
-      // Match against starters (longest first already sorted)
+      // Try matching from the start first
       for (const starter of Q_STARTERS) {
-        if (t.startsWith(starter + " ") || t === starter) return true;
+        if (t.startsWith(starter + " ") || t === starter) return raw;
       }
 
-      return false;
+      // Search for a question starter embedded mid-text
+      for (const starter of Q_STARTERS) {
+        const idx = t.indexOf(" " + starter + " ");
+        if (idx !== -1) {
+          const extracted = raw.slice(idx + 1).trim();
+          const eWords = extracted.split(/\s+/);
+          if (eWords.length >= 3) return extracted;
+        }
+      }
+
+      return null;
+    }
+
+    function isRealQuestion(text) {
+      return extractQuestion(text) !== null;
+    }
+
+    function processBuffer() {
+      if (!sentenceBuffer.trim() || paused) return;
+      const sentences = splitSentences(sentenceBuffer);
+      sentenceBuffer = "";
+      for (const sentence of sentences) {
+        const question = extractQuestion(sentence);
+        console.log("[SENTENCE]", sentence, "| question:", question);
+        if (question) {
+          addQuestion(question);
+          $ttext.innerHTML = escHtml(fullTranscript.slice(-180).replace(question, "")) +
+            '<span class="hit">' + escHtml(question) + '</span>';
+        }
+      }
     }
 
     // ============ DOM ============
@@ -299,9 +336,8 @@
           else interimText+=t;
         }
 
-        // Update live transcript
         $tbox.classList.add("show");
-        $ttext.innerHTML=escHtml(fullTranscript.slice(-180)+" "+finalText)+
+        $ttext.innerHTML=escHtml(fullTranscript.slice(-180)+" "+sentenceBuffer+" "+finalText)+
           (interimText?'<span class="interim"> '+escHtml(interimText)+'</span>':'');
         $tbox.scrollTop=$tbox.scrollHeight;
 
@@ -310,26 +346,38 @@
         const chunk=finalText.trim();
         fullTranscript+=" "+chunk;
         context=fullTranscript.slice(-800);
-        monoCount+=chunk.split(/\s+/).length;
+        sentenceBuffer+=" "+chunk;
+        lastFinalTime=Date.now();
 
-        // Log to console for debugging
-        console.log("[VOICE]",chunk,"| isQ:",isRealQuestion(chunk));
+        console.log("[VOICE]",chunk);
 
-        // Check the whole final chunk as one unit
-        // Speech API natural pauses = sentence boundaries
-        if(!paused && !cooldown && isRealQuestion(chunk)){
-          // Skip if deep in a monologue (>80 words without pause)
-          if(monoCount<80){
-            cooldown=true;
-            setTimeout(()=>{cooldown=false},3000);
-            addQuestion(chunk);
-            monoCount=0;
-
-            // Highlight in transcript
-            $ttext.innerHTML=escHtml(fullTranscript.slice(-180).replace(chunk,""))+
-              '<span class="hit">'+escHtml(chunk)+'</span>';
+        // Check if the buffer contains complete sentences (ending with . ? !)
+        const completeSentenceMatch=sentenceBuffer.match(/^(.*[.?!])\s*(.*?)$/s);
+        if(completeSentenceMatch){
+          const complete=completeSentenceMatch[1];
+          const remainder=completeSentenceMatch[2]||"";
+          sentenceBuffer=remainder;
+          const sentences=splitSentences(complete);
+          for(const sentence of sentences){
+            const question=extractQuestion(sentence);
+            console.log("[SENTENCE]",sentence,"| question:",question);
+            if(!paused && question){
+              addQuestion(question);
+              $ttext.innerHTML=escHtml(fullTranscript.slice(-180).replace(question,""))+
+                '<span class="hit">'+escHtml(question)+'</span>';
+            }
           }
         }
+
+        // Silence timer: if no new speech for 1.5s, flush the buffer
+        // (handles sentences without punctuation — common in speech)
+        clearTimeout(silenceTimer);
+        silenceTimer=setTimeout(()=>{
+          if(sentenceBuffer.trim()){
+            console.log("[SILENCE FLUSH]",sentenceBuffer.trim());
+            processBuffer();
+          }
+        },1500);
       };
 
       rec.onerror=function(e){
@@ -359,18 +407,19 @@
     }
 
     async function fetchBullets(q){
-      if(!WORKER_URL||!API_KEY){
-        q.bullets=["Configure Worker URL and API key in ⚙ settings"];
+      if(!WORKER_URL){
+        q.bullets=["Configure API endpoint in ⚙ settings"];
         q.loading=false;renderQuestions();return;
+      }
+      const headers={"Content-Type":"application/json"};
+      if(API_KEY){
+        headers["x-api-key"]=API_KEY;
+        headers["anthropic-version"]="2023-06-01";
       }
       try{
         const res=await fetch(WORKER_URL,{
           method:"POST",
-          headers:{
-            "Content-Type":"application/json",
-            "x-api-key":API_KEY,
-            "anthropic-version":"2023-06-01",
-          },
+          headers,
           body:JSON.stringify({
             model:"claude-sonnet-4-20250514",
             max_tokens:1000,
@@ -428,20 +477,24 @@
 
     // ============ CONTROLS ============
     function toggleMic(){
-      if(!WORKER_URL||!API_KEY){showSettings();return}
+      if(!WORKER_URL){showSettings();return}
       if(listening){
         listening=false;
         if(recognition){recognition.onend=null;recognition.stop();recognition=null}
+        clearTimeout(silenceTimer);
+        if(sentenceBuffer.trim()) processBuffer();
         $tbox.classList.remove("show");
       }else{
+        sentenceBuffer="";
         recognition=initRecognition();
-        if(recognition){listening=true;monoCount=0;try{recognition.start()}catch(_){}}
+        if(recognition){listening=true;try{recognition.start()}catch(_){}}
       }
       updateUI();renderQuestions();
     }
     function togglePause(){paused=!paused;updateUI()}
     function clearAll(){
-      fullTranscript="";context="";questions=[];monoCount=0;
+      fullTranscript="";context="";questions=[];
+      sentenceBuffer="";clearTimeout(silenceTimer);
       $tbox.classList.remove("show");$ttext.innerHTML="";
       renderQuestions();
     }

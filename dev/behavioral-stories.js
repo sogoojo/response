@@ -29,7 +29,7 @@ const CATEGORIES = {
   },
   "frameworks-leadership": {
     name: "Frameworks — Leadership & People",
-    questionTypes: ["fw-high-performing-team", "fw-management-style", "fw-scaling-org", "fw-stakeholder-management"],
+    questionTypes: ["fw-high-performing-team", "fw-management-style", "fw-scaling-org", "fw-stakeholder-management", "fw-strategy-to-delivery", "fw-operational-balance"],
   },
   "frameworks-technical": {
     name: "Frameworks — Technical & Execution",
@@ -64,6 +64,8 @@ const QUESTION_TYPES = {
   "fw-management-style":      { name: "Management Style",          category: "frameworks-leadership",  signals: ["leadership-influence", "mentorship"], isFramework: true },
   "fw-scaling-org":           { name: "Scaling Organizations",     category: "frameworks-leadership",  signals: ["leadership-influence", "driving-results"], isFramework: true },
   "fw-stakeholder-management":{ name: "Stakeholder Management",    category: "frameworks-leadership",  signals: ["communicating-effectively", "leadership-influence"], isFramework: true },
+  "fw-strategy-to-delivery":  { name: "Strategy → Delivery",        category: "frameworks-leadership",  signals: ["leadership-influence", "driving-results"], isFramework: true },
+  "fw-operational-balance":   { name: "Keeping the Lights On / Operational Balance", category: "frameworks-leadership", signals: ["driving-results", "ownership"], isFramework: true },
   "fw-technical-excellence":  { name: "Technical Excellence",      category: "frameworks-technical",   signals: ["driving-results", "ownership"], isFramework: true },
   "fw-handling-ambiguity":    { name: "Handling Ambiguity",        category: "frameworks-technical",   signals: ["handling-ambiguity", "ownership"], isFramework: true },
   "fw-prioritization":        { name: "Prioritization",            category: "frameworks-technical",   signals: ["driving-results", "communicating-effectively"], isFramework: true },
@@ -288,16 +290,16 @@ const STORIES = [
     questionTypes: ["tough-project", "blockers"],
     signals: ["handling-ambiguity", "leadership-influence", "communicating-effectively"],
     card: {
-      c: "Multi-million-dollar cloud migration stalled — no reliable view of how apps depended on each other. Brief: 'We need to understand our dependencies.' No definition, no owner, no reliable data.",
+      c: "When a critical system went down, the first 20 min went to figuring out *who was even affected*, not fixing it. We had dependency data but it couldn't tell a dead app from a fine one — a payment-gateway dependency (dead) and a reporting-API dependency (fine) were recorded identically. Nobody owned what 'critical' meant; every team defined 'dependency' differently (infra=hosting, app owners=data flows, risk=recovery chains).",
       a: [
-        "Cross-functional workshops — 'what decision are you trying to make with dependency data?'",
-        "Surfaced 3 layers (app, infra, recovery), defined unified data model + taxonomy",
-        "4 Epics: Data Standardization, Visualization Layer, Attestation Workflow, Governance",
-        "Each epic owned by dedicated pod (4-6 eng) + Tech Lead. RACI for clarity.",
+        "Workshops across infra / app owners / risk — reframed the question: 'what decision are you trying to make with this?' not 'what are your dependencies'",
+        "Built a criticality model: rules-based, not self-declared — computed from objective criteria (recovery-time, backs a critical business service) into tiers (critical / recovery / partial / no-recovery)",
+        "Criticality inherited — an app is critical if something critical depends on it, traced through the chain = true blast radius. Owners attest; classification applied uniformly + reason attached (auditable)",
+        "Decomposed into pods: taxonomy/criticality model, data layer, impact-viz, attestation workflow",
         "Pivoted from Neo4j to Java API + JS graph viz — within existing stack",
       ],
-      r: "Trusted system of record — unblocked cloud migration. Unified 4 data sources. Attestation effort reduced 40%. Adopted by 1,300+ critical apps.",
-      l: "In ambiguous programs, alignment comes before architecture. Once everyone defines the same 'why,' structure and delivery become straightforward.",
+      r: "Real-time blast radius in incidents — right people on the bridge in minutes, no over-paging unaffected teams. Risk audit prep halved (accurate recovery chains). Adopted by 1,300+ critical apps; unblocked stalled migration planning as a second-order benefit.",
+      l: "In ambiguity, the breakthrough is reframing the question, not building faster — 'what breaks when this breaks, and who must act?' Alignment on the why comes before architecture.",
     },
     probes: {
       "why not neo4j": "POC revealed steep operational overhead + limited in-house expertise. Pivoted to Java + JS viz on Postgres. Delivered in 2 sprints.",
@@ -1006,6 +1008,34 @@ const FRAMEWORKS = [
     signals: ["leadership-influence", "driving-results"],
   },
   {
+    id: "fw-strategy-to-delivery",
+    questionType: "fw-strategy-to-delivery",
+    definition: "Translating strategy into delivery is about creating line-of-sight — every team sees how its work ladders to the outcome — not cascading targets downward.",
+    pillars: [
+      "Start with the outcome and the WHY, not the task — what we're trying to achieve and why it matters",
+      "Work backwards from the strategic metric to the operational drivers teams can actually move",
+      "Make ownership and line-of-sight explicit — people buy into why targets matter, not the targets themselves",
+      "Sequence by business value — deliver where it matters most first; those teams become reference adopters that build momentum",
+      "Feedback loops, adapt fast — find root cause when it drifts and adjust the plan rather than letting problems grow",
+      "Recognize results — recognition reinforces the behaviors that produced them",
+    ],
+    storyLink: "eb-tech-drift",
+    signals: ["leadership-influence", "driving-results"],
+  },
+  {
+    id: "fw-operational-balance",
+    questionType: "fw-operational-balance",
+    definition: "Keeping the lights on isn't leftover work — it's a budgeted line item that defends feature velocity, not something that competes with it.",
+    pillars: [
+      "Budget KTLO explicitly — a deliberate, planned slice of capacity for operational work, reliability, and tech debt (often 20-30%); the number isn't the point, planning it is",
+      "Let data set the dial — SLOs and error budgets: burning the error budget is an objective signal to slow features and invest in reliability",
+      "Make the tradeoff visible — frame it for stakeholders as a shared decision: 'if we don't address X, here's the incident / churn / security exposure'",
+      "Protect against the death spiral — under-investing in KTLO kills feature velocity too (neglected systems generate more incidents, more interruptions), so reliability investment defends throughput, it doesn't compete with it",
+    ],
+    storyLink: "eb-mgmt-ktlo",
+    signals: ["driving-results", "ownership"],
+  },
+  {
     id: "fw-stakeholder-management",
     questionType: "fw-stakeholder-management",
     definition: "Stakeholder management is about creating shared understanding, not managing expectations down.",
@@ -1110,6 +1140,8 @@ const FRAMEWORK_KEYWORDS = {
   "fw-management-style":       ["management style", "management philosophy", "how do you manage", "leadership style", "what kind of manager", "what kind of leader", "describe your style", "your approach to managing"],
   "fw-scaling-org":            ["scale an org", "scaling organization", "grow an organization", "org scaling", "scale engineering org", "growing the org", "org structure"],
   "fw-stakeholder-management": ["manage stakeholders", "stakeholder management", "work with stakeholders", "manage up", "align stakeholders", "executive communication", "manage expectations"],
+  "fw-strategy-to-delivery":   ["translate strategy", "strategy into delivery", "strategy into operational delivery", "strategy to execution", "strategy into execution", "operational delivery", "company strategy", "turn strategy into", "vision to execution", "execute the strategy"],
+  "fw-operational-balance":    ["keeping the lights on", "keep the lights on", "keeping the light on", "lights on", "ktlo", "run the business", "business as usual", "operational vs", "operational work vs", "tech debt vs features", "reliability vs features", "maintenance vs new", "balance operational", "balance reliability", "balance keeping"],
   "fw-technical-excellence":   ["technical excellence", "engineering excellence", "good engineering", "quality engineering", "define excellence", "engineering standards", "what does good look like"],
   "fw-handling-ambiguity":     ["handle ambiguity", "deal with ambiguity", "approach to ambiguity", "navigate uncertainty", "unclear requirements", "when things are unclear", "ambiguous situation"],
   "fw-prioritization":         ["how do you prioritize", "prioritization framework", "decide what to work on", "competing priorities", "prioritize your work", "what do you work on first", "how to prioritize"],
@@ -1117,5 +1149,33 @@ const FRAMEWORK_KEYWORDS = {
   "fw-incident-management":    ["incident management", "approach to incidents", "handle incidents", "incident response", "on-call philosophy", "manage outages", "production incidents"],
   "fw-decision-making":        ["decision making", "make decisions", "approach to decisions", "decision framework", "how do you decide", "technical decisions", "making technical choices"],
 };
+
+// ---- Tech-screen prep merge (additive; see dev/tech-screen-stories.js) ----
+// Appends Mastercard Hiring-Team Tech-Screen material without modifying any
+// existing entry above. Remove this block + the file to fully revert.
+const {
+  TECH_SCREEN_QUESTION_TYPES,
+  TECH_SCREEN_CATEGORY,
+  TECH_SCREEN_STORIES,
+  TECH_SCREEN_KEYWORDS,
+} = require("./tech-screen-stories");
+Object.assign(QUESTION_TYPES, TECH_SCREEN_QUESTION_TYPES);
+Object.assign(CATEGORIES, TECH_SCREEN_CATEGORY);
+Object.assign(QUESTION_KEYWORDS, TECH_SCREEN_KEYWORDS);
+STORIES.push(...TECH_SCREEN_STORIES);
+
+// The 49 pillar Q&As (single source: pillar-cards.js) — surfaced live by the
+// classifier and rendered on the prep page from the same data.
+const {
+  PILLAR_QUESTION_TYPES,
+  PILLAR_CATEGORY,
+  PILLAR_STORIES,
+  PILLAR_KEYWORDS,
+} = require("./pillar-cards");
+Object.assign(QUESTION_TYPES, PILLAR_QUESTION_TYPES);
+Object.assign(CATEGORIES, PILLAR_CATEGORY);
+Object.assign(QUESTION_KEYWORDS, PILLAR_KEYWORDS);
+STORIES.push(...PILLAR_STORIES);
+// ---------------------------------------------------------------------------
 
 module.exports = { SIGNALS, CATEGORIES, QUESTION_TYPES, STORIES, QUESTION_KEYWORDS, FRAMEWORKS, FRAMEWORK_KEYWORDS };

@@ -169,6 +169,20 @@
         .coach-key{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:#2a2a3a;border:1px solid #3a3a4a;border-radius:4px;color:#8a87a0;font-weight:700;font-size:11px;font-family:monospace}
         .coach-key.active{background:#ffd700;color:#000;border-color:#ffd700}
         .coach-label{color:#666;margin-right:12px}
+        /* Story override drawer — hidden until summoned (S / click), slides up above the mic */
+        .story-drawer{max-height:0;overflow:hidden;background:#14141e;border-top:1px solid #2a2a3a;transition:max-height .2s ease;flex-shrink:0}
+        .story-drawer.open{max-height:42vh;overflow-y:auto}
+        .story-drawer-inner{padding:12px 16px}
+        .story-drawer-hdr{display:flex;justify-content:space-between;align-items:center;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#8a87a0;margin-bottom:10px}
+        .story-drawer-hdr .sd-close{cursor:pointer;color:#666}
+        .story-drawer-hdr .sd-close:hover{color:#e8e6f0}
+        .story-grp{margin-bottom:10px}
+        .story-grp-label{font-size:10px;color:#6c6a80;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+        .story-chip{display:inline-block;margin:0 6px 6px 0;padding:6px 11px;background:#1f1f2e;border:1px solid #2a2a3a;border-radius:14px;font-size:12px;color:#e8e6f0;cursor:pointer;transition:all .12s}
+        .story-chip:hover{border-color:#4fc3f7;background:#1a2330}
+        .story-chip b{font-weight:700;color:#fff}
+        .story-chip:hover b,.story-chip:hover span{color:#4fc3f7}
+        .story-chip span{opacity:.5;font-size:11px;margin-left:5px}
         .coach-bar.flash{background:#1a1a3e}
 
         .transcript-bar{
@@ -191,11 +205,18 @@
         .silence-bar{height:3px;width:120px;background:#2a2a3a;border-radius:2px;overflow:hidden}
         .silence-fill{height:100%;background:#ff9800;width:0;transition:width .1s linear}
 
-        .debug-panel{width:360px;display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid #2a2a3a}
+        .debug-panel{width:360px;display:flex;flex-direction:column;flex-shrink:0;border-left:1px solid #2a2a3a;transition:width .15s ease}
+        .debug-panel.collapsed{width:38px}
+        .debug-panel.collapsed .debug-tabs,
+        .debug-panel.collapsed .debug-content,
+        .debug-panel.collapsed #dbgLabel{display:none}
         .debug-hdr{
           padding:14px 16px;border-bottom:1px solid #2a2a3a;
           font-size:13px;font-weight:700;letter-spacing:1px;color:#8a87a0;
+          cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:8px;
         }
+        .debug-hdr:hover{color:#c9c6df}
+        .debug-panel.collapsed .debug-hdr{justify-content:center;padding:14px 0}
         .debug-content{flex:1;overflow-y:auto;padding:12px}
         .log-entry{
           font-size:11px;font-family:monospace;padding:4px 0;
@@ -267,6 +288,25 @@
         .fw-prep-label{font-size:11px;color:#6c5ce7;font-weight:600;margin-top:8px}
 
         /* Fallback AI card */
+        /* Two-stage H read-back card — amber = "pending, confirm me" (vs the blue answer cards) */
+        .preview-card{
+          background:#1f1b14;border:1px solid #3a3326;border-left:4px solid #e6a23c;
+          border-radius:12px;padding:16px 18px;margin-bottom:12px;
+          box-shadow:0 0 22px rgba(230,162,60,.14);
+        }
+        .pv-hdr{font-size:11px;font-weight:700;letter-spacing:1px;color:#e6a23c;margin-bottom:8px}
+        .pv-q{font-size:16px;color:#fff;font-weight:600;line-height:1.4;margin-bottom:14px}
+        .pv-opts{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+        .pv-opt{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #3a3326;
+          border-radius:8px;cursor:pointer;background:rgba(255,255,255,.02);transition:all .15s}
+        .pv-opt:hover{border-color:#e6a23c;background:rgba(230,162,60,.08)}
+        .pv-opt:first-child{border-color:#e6a23c;background:rgba(230,162,60,.06)}
+        .pv-key{flex:none;min-width:30px;text-align:center;font-family:monospace;font-weight:700;
+          font-size:12px;color:#0a0a0f;background:#e6a23c;border-radius:4px;padding:3px 6px}
+        .pv-main{font-size:14px;color:#e8e6f0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+        .pv-main b{color:#fff;font-weight:600}
+        .pv-sub{font-size:12px;color:#8a87a0;font-family:monospace}
+        .pv-foot{font-size:11px;color:#8a87a0;font-style:italic}
         .fallback-card{
           background:#1a1a24;border:1px solid #2a2a3a;border-left:4px solid #03a9f4;
           border-radius:12px;padding:18px 20px;margin-bottom:12px;transition:all .3s;
@@ -375,6 +415,21 @@
                 <button class="btn" onclick="backToPrep()">Prep</button>
             </div>
 
+            <!-- Buy-time openers: static, no JS, no dependency on the live pipeline.
+                 Say one the instant you hear a question, to fill the ~3s while the
+                 card classifies and surfaces. The deep answer is NOT instant — this is. -->
+            <details open style="display:none;margin:0 0 8px;background:rgba(70,201,139,0.06);border:1px solid rgba(70,201,139,0.25);border-radius:8px;padding:8px 12px">
+                <summary style="cursor:pointer;font-size:10px;font-weight:700;letter-spacing:.6px;color:#46c98b;text-transform:uppercase;list-style:none">&#9889; Buy-time openers &mdash; say one the instant you hear a question</summary>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-size:13px;color:#d0cfe0">
+                    <span style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:4px 10px">&ldquo;That's a great question &mdash; let me give you a concrete example.&rdquo;</span>
+                    <span style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:4px 10px">&ldquo;The way I think about that is in a couple of parts&hellip;&rdquo;</span>
+                    <span style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:4px 10px">&ldquo;Let me start with the principle, then a real example.&rdquo;</span>
+                    <span style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:4px 10px">&ldquo;Just to frame my answer &mdash; are we talking [scale/context]?&rdquo;</span>
+                    <span style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:4px 10px">&ldquo;Yeah, I've dealt with this directly &mdash; at Citi&hellip;&rdquo;</span>
+                    <span style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:4px 10px">&ldquo;Right &mdash; short answer is X; let me unpack why.&rdquo;</span>
+                </div>
+            </details>
+
             <div class="feed" id="feed">
                 <div class="empty" id="emptyState">
                     <div class="empty-icon">&#x1F3AF;</div>
@@ -383,10 +438,22 @@
                 </div>
             </div>
 
+            <div class="story-drawer" id="storyDrawer">
+                <div class="story-drawer-inner">
+                    <div class="story-drawer-hdr">
+                        <span>Override — pick a story</span>
+                        <span class="sd-close" onclick="toggleStoryDrawer()">esc ✕</span>
+                    </div>
+                    <div id="storyDrawerBody"></div>
+                </div>
+            </div>
+
             <div class="coach-bar" id="coachBar">
-                <span class="coach-key" data-key="h">H</span> <span class="coach-label">Help</span>
+                <span class="coach-key" data-key="h">H</span> <span class="coach-label">Read→Answer</span>
                 <span class="coach-key" data-key="m">M</span> <span class="coach-label">More</span>
                 <span class="coach-key" data-key="l">L</span> <span class="coach-label">Last card</span>
+                <span class="coach-key" data-key="s" onclick="toggleStoryDrawer()" style="cursor:pointer">S</span> <span class="coach-label">Stories +#</span>
+                <span class="coach-key" data-key="a" id="autoKey" onclick="toggleAuto()" style="cursor:pointer">A</span> <span class="coach-label" id="autoLabel">Auto&nbsp;off</span>
             </div>
 
             <div class="transcript-bar">
@@ -406,10 +473,15 @@
                 </button>
                 <div class="silence-bar" style="visibility:hidden"><div class="silence-fill"></div></div>
             </div>
+            <div style="text-align:center;margin-top:6px">
+                <select id="micPicker" onchange="onMicPick()" title="Microphone input — lock this so the OS can't swap it (e.g. iPhone Continuity)" style="font-size:11px;background:#1a1a24;color:#9a97b0;border:1px solid #2a2a3a;border-radius:6px;padding:3px 8px;max-width:280px;cursor:pointer">
+                    <option value="">🎙 Default microphone</option>
+                </select>
+            </div>
         </div>
 
         <div class="debug-panel">
-            <div class="debug-hdr">DEBUG</div>
+            <div class="debug-hdr" onclick="toggleDebug()" title="Collapse / expand debug panel"><span id="dbgLabel">DEBUG</span><span id="dbgChevron">›</span></div>
             <div class="debug-tabs">
                 <div class="debug-tab active" id="dbgTabTest" onclick="switchDebugTab('test')">Test</div>
                 <div class="debug-tab" id="dbgTabLog" onclick="switchDebugTab('log')">Log</div>
@@ -436,7 +508,7 @@
     let allFrameworks = [];
     let frameworkKeywords = {};
 
-    let selectedDomain = "screen";
+    let selectedDomain = "infra";
     let assignments = {};  // { questionType: storyId }
     let frameworkAssignments = {};  // { frameworkQuestionType: storyId }
     let prepMode = "stories";  // "stories" or "frameworks"
@@ -476,6 +548,7 @@
     const DG_FLUSH_MIN = 35;
     let dgSocket = null;
     let dgMediaStream = null;
+    let selectedMicId = localStorage.getItem("micDeviceId") || "";
     let dgAudioContext = null;
     let dgProcessor = null;
 
@@ -493,7 +566,8 @@
             try { frameworkAssignments = JSON.parse(savedFw); } catch (_) {}
         }
         const savedDomain = localStorage.getItem("behavioral-domain");
-        if (savedDomain) selectedDomain = savedDomain;
+        const validDomains = ["infra", "data", "payments", "all"];
+        if (savedDomain && validDomains.includes(savedDomain)) selectedDomain = savedDomain;
 
         try {
             const resp = await fetch("/api/behavioral/data");
@@ -507,6 +581,9 @@
             frameworkKeywords = data.frameworkKeywords || {};
             renderDomainTabs();
             renderPrepGrid();
+            renderStoryDrawer();
+            updateAutoUI();
+            applyDebugCollapsed();
         } catch (e) {
             console.error("Failed to load behavioral data", e);
         }
@@ -515,10 +592,9 @@
     // ===== PREP MODE =====
     function renderDomainTabs() {
         const domains = [
-            { key: "screen", label: "Recruiter Screen" },
             { key: "infra", label: "Infrastructure" },
             { key: "data", label: "Data" },
-            { key: "payments", label: "Payments" },
+            { key: "payments", label: "General" },
             { key: "all", label: "All" },
         ];
         const $tabs = document.getElementById("domainTabs");
@@ -702,7 +778,7 @@
     function startInterview() {
         document.getElementById("prepView").classList.remove("active");
         document.getElementById("liveView").classList.add("active");
-        const domainLabel = {infra:"Infrastructure",data:"Data",payments:"Payments",all:"All Domains"};
+        const domainLabel = {infra:"Infrastructure",data:"Data",payments:"General",all:"All Domains"};
         document.getElementById("liveDomain").textContent = domainLabel[selectedDomain] || selectedDomain;
 
         fetch("/api/behavioral/reset", { method: "POST" }).catch(() => {});
@@ -785,7 +861,8 @@
     // ===== DEEPGRAM SPEECH MODULE =====
     async function startDeepgram() {
         try {
-            dgMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            dgMediaStream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: selectedMicId ? { exact: selectedMicId } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+            populateMics(); // device labels are only available once permission is granted
         } catch (e) {
             alert("Microphone access denied");
             listening = false;
@@ -956,6 +1033,9 @@
             if (trigger !== "rolling") { fullTranscript += " " + buffer; pendingBuffer = ""; }
             return;
         }
+        // TAP MODE (auto-fire off): keep the transcript current but NEVER auto-fire a card on a
+        // background trigger — H answers on demand instead. This is what stops the card spam.
+        if (!autoFire) { fullTranscript += " " + buffer; pendingBuffer = ""; return; }
         if (analyzing) { devLog("SKIP", "already analyzing"); return; }
 
         analyzing = true;
@@ -984,10 +1064,14 @@
             devLog("DETECT", `result: ${JSON.stringify(data)}`);
 
             const isQuestion = ["question_detected", "framework_detected", "unmatched_question", "follow_up"].includes(data.action);
-            if (isQuestion && data.question) {
+            if (isQuestion && (data.question || data.action === "follow_up")) {
+                data.question = data.question || "(follow-up on previous answer)";
                 const dedup = data.questionType || data.question;
+                // Same type → dup. Different type → only a dup if the wording is near-identical
+                // (a re-detection of the same utterance). 0.4 was eating genuinely different
+                // questions that merely shared generic words like "project"/"involved".
                 const isDup = dedup === lastDetectedType ||
-                    (lastDetectedQuestion && wordOverlap(data.question, lastDetectedQuestion) >= 0.4);
+                    (lastDetectedQuestion && wordOverlap(data.question, lastDetectedQuestion) >= 0.7);
                 if (!isDup || data.action === "follow_up") {
                     lastDetectedType = data.questionType || dedup;
                     lastDetectedQuestion = data.question;
@@ -1009,21 +1093,157 @@
 
     // ===== SHOW STORY CARD =====
     // ===== UNIFIED INTELLIGENT CARD =====
+    // ===== STORY OVERRIDE DRAWER (manual pick mid-interview) =====
+    // Your core bank from the eBay question map. Edit this list to change what shows.
+    const CORE_STORIES = [
+        // TECH
+        { grp: "TECH",      id: "eb-tech-drift",           name: "DRIFT",      hook: "source of truth" },
+        { grp: "TECH",      id: "eb-tech-scout",           name: "SCOUT",      hook: "ML ops-intel" },
+        { grp: "TECH",      id: "eb-tech-impact",          name: "FinOps",     hook: "$12.5M savings" },
+        { grp: "TECH",      id: "eb-tech-breakdown",       name: "TIBCO",      hook: "migration method" },
+        { grp: "TECH",      id: "eb-tech-experimentation", name: "Experiment", hook: "canary / A-B" },
+        { grp: "TECH",      id: "eb-tech-neo4j",           name: "Neo4j",      hook: "wrong call" },
+        { grp: "TECH",      id: "eb-tech-ambiguity",       name: "App-Deps",   hook: "blast radius" },
+        { grp: "TECH",      id: "eb-tech-platform-design", name: "Platform",   hook: "90-day plan" },
+        // CONFLICT
+        { grp: "CONFLICT",  id: "eb-conf-pod4",            name: "Pod4",       hook: "competing impl" },
+        { grp: "CONFLICT",  id: "eb-conf-greg",            name: "Greg",       hook: "gatekeeper" },
+        { grp: "CONFLICT",  id: "eb-conf-sbom",            name: "SBOM",       hook: "CISO cross-org" },
+        { grp: "CONFLICT",  id: "eb-conf-kafka-solace",    name: "Kafka",      hook: "audit trust" },
+        { grp: "CONFLICT",  id: "eb-conf-supervisor",      name: "Manager",    hook: "disagree-commit" },
+        // PRIORITIES
+        { grp: "PRIORITIES",id: "eb-mgmt-backlog",         name: "Priorities", hook: "urgent mid-migration" },
+        { grp: "PRIORITIES",id: "eb-mgmt-backlog-health",  name: "Backlog",    hook: "+40% search" },
+        // PEOPLE
+        { grp: "PEOPLE",    id: "eb-mgmt-engineer-dev",    name: "Eng-Dev",    hook: "to senior" },
+        { grp: "PEOPLE",    id: "eb-mgmt-underperformer",  name: "Coach-Up",   hook: "underperformer" },
+        { grp: "PEOPLE",    id: "eb-mgmt-feedback",        name: "Feedback",   hook: "hard convo" },
+        { grp: "PEOPLE",    id: "eb-mgmt-hiring",          name: "Hiring",     hook: "structured loop" },
+        { grp: "PEOPLE",    id: "eb-mgmt-trust",           name: "Trust",      hook: "burned-out team" },
+        { grp: "PEOPLE",    id: "eb-mgmt-scaling",         name: "Scaling",    hook: "tech-lead model" },
+        { grp: "PEOPLE",    id: "eb-mgmt-org-design",      name: "Org",        hook: "3 value streams" },
+        { grp: "PEOPLE",    id: "eb-mgmt-velocity",        name: "Velocity",   hook: "inherited chaos" },
+        { grp: "PEOPLE",    id: "eb-mgmt-inclusive",       name: "Inclusive",  hook: "quieter voices" },
+        // NARRATIVE
+        { grp: "NARRATIVE", id: "eb-nar-pitch",            name: "Pitch",      hook: "elevator" },
+        { grp: "NARRATIVE", id: "eb-nar-why-ebay",         name: "Why-eBay",   hook: "two things" },
+        { grp: "NARRATIVE", id: "eb-nar-why-leave",        name: "Why-Leave",  hook: "foundation done" },
+        { grp: "NARRATIVE", id: "eb-nar-questions",        name: "Questions",  hook: "ask him" },
+        { grp: "TECH",      id: "eb-mgmt-ktlo",            name: "KTLO",       hook: "30% reliability budget" },
+        { grp: "PEOPLE",    id: "eb-mgmt-playbook",        name: "Mgr Playbook", hook: "hire→onboard→strategy→exec" },
+    ];
+    // Drawer hotkeys: digits 1-9 first, then unused letters (skips the coach keys h/m/l/s/a).
+    const STORY_HOTKEYS = "123456789bcdefgijknopqrtuvwxyz".split("");
+
+    function renderStoryDrawer() {
+        const body = document.getElementById("storyDrawerBody");
+        if (!body) return;
+        const groups = {};
+        CORE_STORIES.forEach((s, i) => { (groups[s.grp] = groups[s.grp] || []).push({ ...s, hk: STORY_HOTKEYS[i] }); });
+        const badge = k => k ? `<kbd style="background:#2a2a3a;border:1px solid #3a3a4a;border-radius:4px;padding:0 5px;margin-right:5px;font-size:11px;color:#e6a23c">${k.toUpperCase()}</kbd>` : "";
+        body.innerHTML = Object.entries(groups).map(([g, items]) => `
+            <div class="story-grp">
+                <div class="story-grp-label">${g}</div>
+                ${items.map(it => `<span class="story-chip" onclick="overrideWithStory('${it.id}')">${badge(it.hk)}<b>${it.name}</b><span>${esc(it.hook)}</span></span>`).join("")}
+            </div>`).join("");
+    }
+
+    function toggleStoryDrawer() { document.getElementById("storyDrawer")?.classList.toggle("open"); }
+    function closeStoryDrawer() { document.getElementById("storyDrawer")?.classList.remove("open"); }
+
+    // Manual pick — render the chosen story's card now, overriding what's shown.
+    // It stays the latest card until the analyzer detects the next question (which appends its own).
+    function overrideWithStory(storyId) {
+        closeStoryDrawer();
+        const story = allStories.find(s => s.id === storyId);
+        if (!story) { devLog("OVERRIDE", `story not loaded: ${storyId}`); return; }
+        document.getElementById("emptyState")?.remove();
+        collapseOldCards();
+        const el = document.createElement("div");
+        el.className = "fallback-card latest";
+        el.innerHTML = `
+            <div class="fb-label" style="color:#4fc3f7">MANUAL OVERRIDE</div>
+            <div class="fb-title">${esc(story.title)}</div>
+            <div class="carl-slot"></div>
+            <div class="timestamp">${new Date().toLocaleTimeString()}</div>`;
+        el.addEventListener("click", () => { if (el.classList.contains("collapsed")) el.classList.remove("collapsed"); });
+        document.getElementById("feed").appendChild(el);
+        el.querySelector(".carl-slot").innerHTML = buildCarlHtml(story);
+        lastActiveStory = story;
+        liveCards.push({ qtKey: "manual", el });
+        el.scrollIntoView({ behavior: "smooth", block: "end" });
+        devLog("OVERRIDE", `manual story: ${story.title}`);
+    }
+
+    // Strip prep-meta so a CARL bullet jogs the real content, not the framing note. Keeps **bold**.
+    function carlClean(text) {
+        let t = String(text).replace(/\[(?:VERIFY|INSERT)[^\]]*\]/gi, "").trim();
+        t = t.replace(/^For ['"][^'"]*['"][.\s]*/i, "");                     // "For 'a time you...'."
+        t = t.replace(/^(?:eBay's own question|From the eBay list)[^.?]*[.?]['"]?\s*/i, "");
+        t = t.replace(/^\d+-second headline\s*:\s*['"]?/i, "");              // "20-second headline:"
+        t = t.replace(/^Lead(?:\s+\w+){0,2}\s+story\s*[—–-]\s*/i, "");       // "Lead failure story —"
+        t = t.replace(/^['"\s]*(?:Frame|Lead|Situation|The version here)\s*:\s*/i, ""); // framing label
+        return t.trim();
+    }
+    // Render markdown bold as bright bold (memory-jog hook), escape the rest.
+    function mdBold(s) {
+        return esc(String(s)).replace(/\*\*(.+?)\*\*/g, '<strong style="color:#fff">$1</strong>');
+    }
+    // Split a CARL field into a few COMPLETE memory-jog bullets — sentences, long ones broken on
+    // em-dash/semicolon. No mid-thought truncation; cap the count, not the words.
+    function carlBullets(text, maxBullets) {
+        const out = [];
+        for (const s of carlClean(text).split(/(?<=[.!?])\s+/).map(x => x.trim()).filter(Boolean)) {
+            if (out.length >= maxBullets) break;
+            if (s.split(/\s+/).length > 18) {
+                for (const sub of s.split(/\s*—\s*|; /).map(x => x.trim()).filter(Boolean)) {
+                    if (out.length >= maxBullets) break;
+                    out.push(sub.replace(/[.,;:]+$/, ""));
+                }
+            } else out.push(s.replace(/[.,;:]+$/, ""));
+        }
+        return out;
+    }
+    // An action bullet → its bold hook + first complete sentence (never cut mid-thought).
+    function actionShort(a) {
+        const t = carlClean(a);
+        const first = (t.match(/^.*?[.!?](?=\s|$)/) || [t])[0].trim();
+        return first.replace(/[.,;:]+$/, "");
+    }
+    // Full CARL, each letter a few complete bullets, bold hooks, generous spacing — a memory jog.
     function buildCarlHtml(story) {
+        const c = story.card;
+        const li = x => typeof x === "string" ? `<li style="margin-bottom:7px">${mdBold(x)}</li>` : `<li style="margin-bottom:7px">${mdBold(x.b)}<ul style="margin:4px 0 2px;padding-left:16px;list-style:circle">${(x.sub||[]).map(s => `<li style="margin-bottom:4px">${mdBold(s)}</li>`).join("")}</ul></li>`;
+        const ul = arr => `<ul style="margin:0;padding-left:18px">${arr.map(li).join("")}</ul>`;
+        // Prefer authored signal cues (terse memory-jogs); fall back to condensing prose.
+        const sig = c.signals || {};
+        const rows = [
+            ["C", "#4fc3f7", sig.c || carlBullets(c.c, 3)],
+            ["A", "#81c784", sig.a || c.a.map(actionShort)],
+            ["R", "#ffb74d", sig.r || carlBullets(c.r, 3)],
+            ["L", "#ce93d8", sig.l || carlBullets(c.l, 2)],
+        ].map(([label, color, arr]) => `
+            <span style="color:${color};font-weight:700;font-size:12px;padding-top:3px">${label}</span>
+            <div style="color:#e8e6f0;font-weight:500">${ul(arr)}</div>`).join("");
         return `
-        <div class="carl-refresher" style="margin-top:12px;padding:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px">
-            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#e6a23c;margin-bottom:8px;font-weight:600">${esc(story.title)}</div>
-            <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px;line-height:1.5">
-                <span style="color:#4fc3f7;font-weight:600;font-size:11px">C</span>
-                <span style="color:#b0adc0">${esc(story.card.c)}</span>
-                <span style="color:#81c784;font-weight:600;font-size:11px">A</span>
-                <span style="color:#b0adc0">${story.card.a.map(a => esc(a)).join(" · ")}</span>
-                <span style="color:#ffb74d;font-weight:600;font-size:11px">R</span>
-                <span style="color:#e8e6f0;font-weight:500">${esc(story.card.r)}</span>
-                <span style="color:#ce93d8;font-weight:600;font-size:11px">L</span>
-                <span style="color:#b0adc0">${esc(story.card.l)}</span>
-            </div>
+        <div class="carl-refresher" style="margin-top:12px;padding:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#e6a23c;margin-bottom:12px;font-weight:700">${esc(story.title)}</div>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;font-size:14px;line-height:1.5">${rows}</div>
         </div>`;
+    }
+
+    // Stream watchdog: a stalled SSE (open connection, no tokens) used to hang reader.read()
+    // forever — freezing the card and blocking H/M taps (coachBusy never cleared). Race each read
+    // against a timeout so a stall REJECTS → the existing catch shows the error and resets coachBusy.
+    // Last-resort net: the server self-heals faster (12s idle → retry), so this only trips on a truly
+    // dead connection.
+    const STREAM_READ_TIMEOUT_MS = 30000;
+    function readWithTimeout(reader) {
+        let t;
+        return Promise.race([
+            reader.read(),
+            new Promise((_, rej) => { t = setTimeout(() => { try { reader.cancel(); } catch (_) {} rej(new Error("stream stalled — tap H to retry")); }, STREAM_READ_TIMEOUT_MS); }),
+        ]).finally(() => clearTimeout(t));
     }
 
     async function showIntelligentCard(data) {
@@ -1079,7 +1299,7 @@
             let fullText = "";
 
             while (true) {
-                const { done, value } = await reader.read();
+                const { done, value } = await readWithTimeout(reader);
                 if (done) break;
                 const chunk = decoder.decode(value, { stream: true });
                 const lines = chunk.split("\n");
@@ -1146,14 +1366,36 @@
     let lastDetectedIntent = "";
     let coachBusy = false;
     let coachDepth = 0;
+    let pendingPreview = null;   // two-stage H: holds the read-back card + candidate readings until you confirm
+    let autoFire = localStorage.getItem("autoFire") === "true";  // tap-mode by default; press A to toggle auto-fire
 
     document.addEventListener("keydown", (ev) => {
-        if (!listening) return;
         if (ev.target.tagName === "INPUT" || ev.target.tagName === "TEXTAREA") return;
         const key = ev.key.toLowerCase();
-        if (key !== "h" && key !== "m" && key !== "l") return;
+        if (key === "escape") { if (pendingPreview) dismissPreview(); closeStoryDrawer(); return; }
+        if (!listening) return;
 
+        // Drawer OPEN → any assigned hotkey (digit or unused letter) fires that story; S closes it;
+        // everything else is ignored (no coach actions while you're picking).
+        if (document.getElementById("storyDrawer")?.classList.contains("open")) {
+            if (key === "s") { ev.preventDefault(); closeStoryDrawer(); return; }
+            const idx = STORY_HOTKEYS.indexOf(key);
+            if (idx >= 0 && CORE_STORIES[idx]) { ev.preventDefault(); overrideWithStory(CORE_STORIES[idx].id); }
+            return;
+        }
+
+        // Two-stage H: while a read-back preview is open, H confirms the top reading and a digit
+        // picks that numbered reading. Other coach keys (m/l/s/a) fall through to normal handling.
+        if (pendingPreview) {
+            if (key === "h") { ev.preventDefault(); commitPreview(0); return; }
+            const n = parseInt(key, 10);
+            if (n >= 1 && n <= pendingPreview.options.length) { ev.preventDefault(); commitPreview(n - 1); return; }
+        }
+
+        // Drawer CLOSED → coach keys only.
+        if (!/^[hmlsa]$/.test(key)) return;
         ev.preventDefault();
+        if (pendingPreview) dismissPreview();   // any other coach key cancels a pending read-back
 
         document.querySelectorAll(".coach-key").forEach(el => {
             el.classList.toggle("active", el.dataset.key === key);
@@ -1164,18 +1406,15 @@
             document.querySelectorAll(".coach-key").forEach(el => el.classList.remove("active"));
         }, 300);
 
-        if (key === "l") {
-            showLastCard();
-            return;
-        }
+        if (key === "s") { toggleStoryDrawer(); return; }
+        if (key === "l") { showLastCard(); return; }
+        if (key === "a") { toggleAuto(); return; }
 
-        if (coachBusy || !lastDetectedQuestion) return;
-
+        if (coachBusy) return;
         if (key === "h") {
-            requestHelp();
+            tapAnswer();                          // answer whatever was just asked (recent speech)
         } else if (key === "m") {
-            coachDepth++;
-            requestMoreDetail();
+            if (lastDetectedQuestion || lastActiveStory) { coachDepth++; requestMoreDetail(); }
         }
     });
 
@@ -1192,6 +1431,150 @@
             prev.el.scrollIntoView({ behavior: "smooth", block: "start" });
             devLog("COACH", "L pressed — expanded previous card");
         }
+    }
+
+    // ===== TAP-FLOW: H answers whatever was just asked, from the recent transcript tail =====
+    function recentTail() {
+        const all = (fullTranscript + " " + pendingBuffer).trim().split(/\s+/).filter(Boolean);
+        return all.slice(-60).join(" ");   // ~last 15-20s — enough to hold the question he just asked
+    }
+    function toggleAuto() {
+        autoFire = !autoFire;
+        localStorage.setItem("autoFire", autoFire ? "true" : "false");
+        updateAutoUI();
+        devLog("MODE", "auto-fire " + (autoFire ? "ON" : "OFF (tap mode)"));
+    }
+    function updateAutoUI() {
+        const k = document.getElementById("autoKey"), l = document.getElementById("autoLabel");
+        if (k) { k.style.background = autoFire ? "#00e676" : ""; k.style.color = autoFire ? "#0a0a0f" : ""; }
+        if (l) l.textContent = autoFire ? "Auto ON" : "Auto off";
+    }
+    // First H press = READ-BACK. We interpret the question and show what we understood (plus any
+    // competing readings) WITHOUT generating an answer. A second H — or a number — commits.
+    async function tapAnswer() {
+        if (coachBusy) return;
+        if (pendingPreview) { commitPreview(0); return; }   // safety: H while preview open → confirm top
+        const recent = recentTail();
+        if (recent.split(/\s+/).filter(Boolean).length < 3) { devLog("TAP", "nothing recent to answer"); return; }
+        coachBusy = true;
+        setStatus("reading question…");
+        document.getElementById("dot").className = "dot thinking";
+        try {
+            const resp = await fetch("/api/behavioral/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                // manual:true → server bypasses the cooldown/dedup suppressions meant for the
+                // auto-fire path. The user explicitly asked; never suppress an explicit tap.
+                body: JSON.stringify({ recentSpeech: recent, fullContext: fullTranscript.slice(-3000), lastDetectedType, manual: true }),
+            });
+            const data = await resp.json();
+            devLog("TAP", `H → ${data.action}/${data.questionType || ""}: ${(data.question || "").slice(0, 60)}`);
+            coachBusy = false;
+            showPreview(data, recent);   // show the read-back; commit happens on the 2nd press
+        } catch (e) {
+            devLog("ERROR", `tap answer failed: ${e.message}`);
+            coachBusy = false;
+            setStatus("");
+        }
+        document.getElementById("dot").className = listening ? "dot on" : "dot";
+    }
+
+    // ===== TWO-STAGE H: read-back + disambiguation before committing to an answer =====
+    const ISQ = a => ["question_detected", "framework_detected", "unmatched_question", "follow_up"].includes(a);
+    function humanize(s) { return (s || "").replace(/[-_]/g, " ").replace(/\b\w/g, c => c.toUpperCase()); }
+
+    // [0] = the system's best reading, then any competing readings the classifier flagged, then a
+    // story-free "Generate fresh" fallback so an explicit tap can ALWAYS produce an answer.
+    function buildPreviewOptions(data, recent) {
+        const tail = recent.split(/\s+/).slice(-45).join(" ");
+        const isQ = ISQ(data.action);
+        const opts = [];
+        if (isQ && (data.question || data.action === "follow_up")) {
+            opts.push({
+                label: data.questionType || data.intent || "Answer this",
+                sub: data.questionType ? (data.intent || "") : (data.intent || ""),
+                question: data.question || tail,
+                intent: data.intent || "unknown",
+                action: data.action,
+                questionType: data.questionType || null,
+                answerHint: data.answerHint || "",
+            });
+        }
+        (data.alternatives || []).forEach(alt => {
+            if (!alt) return;
+            opts.push({
+                label: alt.label || alt.questionType || alt.intent || "Alternate reading",
+                sub: alt.questionType || alt.intent || "",
+                question: alt.question || data.question || tail,
+                intent: alt.intent || "unknown",
+                action: alt.action || "unmatched_question",
+                questionType: alt.questionType || null,
+                answerHint: alt.answerHint || "",
+            });
+        });
+        opts.push({
+            label: "Generate fresh", sub: "no story match",
+            question: (isQ && data.question) ? data.question : tail,
+            intent: (isQ && data.intent) ? data.intent : "unknown",
+            action: "unmatched_question", questionType: null, answerHint: "",
+        });
+        return opts;
+    }
+
+    function showPreview(data, recent) {
+        dismissPreview();
+        const isQ = ISQ(data.action);
+        const heard = (isQ && data.question) ? data.question : recent.split(/\s+/).slice(-30).join(" ");
+        const options = buildPreviewOptions(data, recent);
+        document.getElementById("emptyState")?.remove();
+
+        const el = document.createElement("div");
+        el.className = "preview-card latest";
+        const rows = options.map((o, i) => `
+            <div class="pv-opt" data-idx="${i}">
+                <span class="pv-key">${i === 0 ? "H/1" : (i + 1)}</span>
+                <span class="pv-main"><b>${esc(humanize(o.label))}</b>${o.sub ? `<span class="pv-sub">${esc(o.sub)}</span>` : ""}</span>
+            </div>`).join("");
+        el.innerHTML = `
+            <div class="pv-hdr">HEARD — confirm before I answer</div>
+            <div class="pv-q">“${esc(heard)}”</div>
+            <div class="pv-opts">${rows}</div>
+            <div class="pv-foot">H again → top · number → that reading · Esc → cancel</div>`;
+        el.querySelectorAll(".pv-opt").forEach(o =>
+            o.addEventListener("click", () => commitPreview(parseInt(o.dataset.idx, 10))));
+        document.getElementById("feed").appendChild(el);
+        el.scrollIntoView({ behavior: "smooth", block: "end" });
+        pendingPreview = { el, options };
+        setStatus("confirm →");
+        devLog("PREVIEW", `${options.length} reading(s): "${heard.slice(0, 50)}"`);
+    }
+
+    function dismissPreview() {
+        if (!pendingPreview) return;
+        pendingPreview.el?.remove();
+        pendingPreview = null;
+        setStatus("");
+        document.getElementById("dot").className = listening ? "dot on" : "dot";
+    }
+
+    function commitPreview(idx) {
+        if (!pendingPreview) return;
+        const opt = pendingPreview.options[idx];
+        if (!opt) return;
+        pendingPreview.el?.remove();
+        pendingPreview = null;
+        lastDetectedType = opt.questionType || lastDetectedType;
+        lastDetectedQuestion = opt.question;
+        lastDetectedIntent = opt.intent || "";
+        coachDepth = 0;
+        devLog("PREVIEW", `committed #${idx + 1}: ${opt.label}`);
+        showIntelligentCard({
+            question: opt.question,
+            intent: opt.intent,
+            action: opt.action,
+            questionType: opt.questionType,
+            answerHint: opt.answerHint,
+        });
     }
 
     async function requestHelp() {
@@ -1235,7 +1618,7 @@
             const decoder = new TextDecoder();
             let buf = "", fullText = "";
             while (true) {
-                const { done, value } = await reader.read();
+                const { done, value } = await readWithTimeout(reader);
                 if (done) break;
                 buf += decoder.decode(value, { stream: true });
                 const lines = buf.split("\n");
@@ -1300,7 +1683,7 @@
             const decoder = new TextDecoder();
             let buf = "", fullText = "";
             while (true) {
-                const { done, value } = await reader.read();
+                const { done, value } = await readWithTimeout(reader);
                 if (done) break;
                 buf += decoder.decode(value, { stream: true });
                 const lines = buf.split("\n");
@@ -1324,6 +1707,28 @@
         }
         coachBusy = false;
     }
+
+    // ===== MIC INPUT PICKER (lock the input; the OS default keeps getting hijacked — iPhone Continuity, etc.) =====
+    async function populateMics() {
+        const sel = document.getElementById("micPicker");
+        if (!sel) return;
+        let devices = [];
+        try { devices = await navigator.mediaDevices.enumerateDevices(); } catch (_) { return; }
+        const mics = devices.filter(d => d.kind === "audioinput");
+        sel.innerHTML = '<option value="">🎙 Default microphone</option>' +
+            mics.map((m, i) => `<option value="${m.deviceId}">${(m.label || ("Microphone " + (i + 1))).replace(/[<>]/g, "")}</option>`).join("");
+        sel.value = selectedMicId && mics.some(m => m.deviceId === selectedMicId) ? selectedMicId : "";
+        selectedMicId = sel.value; // drop a stale saved id if that device is gone
+    }
+    function onMicPick() {
+        const sel = document.getElementById("micPicker");
+        selectedMicId = sel.value;
+        localStorage.setItem("micDeviceId", selectedMicId);
+        devLog("MIC", "input locked to: " + (sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].text || "default"));
+        if (listening && speechMode === "deepgram") { stopDeepgram(); startDeepgram(); } // re-grab on the new device
+    }
+    if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener("devicechange", populateMics);
+    populateMics();
 
     // ===== MIC =====
     function toggleMic() {
@@ -1380,6 +1785,22 @@
     }
 
     // ===== DEBUG PANEL =====
+    function applyDebugCollapsed() {
+        // default collapsed (out of the way for live use) unless the user expanded it before
+        const collapsed = localStorage.getItem("dbgCollapsed") !== "0";
+        const panel = document.querySelector(".debug-panel");
+        if (!panel) return;
+        panel.classList.toggle("collapsed", collapsed);
+        document.getElementById("dbgChevron").textContent = collapsed ? "‹" : "›";
+    }
+
+    function toggleDebug() {
+        const panel = document.querySelector(".debug-panel");
+        const collapsed = panel.classList.toggle("collapsed");
+        document.getElementById("dbgChevron").textContent = collapsed ? "‹" : "›";
+        localStorage.setItem("dbgCollapsed", collapsed ? "1" : "0");
+    }
+
     function switchDebugTab(tab) {
         document.getElementById("dbgTabTest").className = tab === "test" ? "debug-tab active" : "debug-tab";
         document.getElementById("dbgTabLog").className = tab === "log" ? "debug-tab active" : "debug-tab";

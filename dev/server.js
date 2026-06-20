@@ -8,7 +8,60 @@ const WebSocket = require("ws");
 
 const { DESIGN_REFERENCES, PATTERNS, KEY_TECHNOLOGIES, ADVANCED_TOPICS, DESIGN_PATTERN_TAGS, ENVELOPE_MATH } = require("./designs");
 const { CODING_PATTERNS, COMPLEXITY_REFERENCE, COMMON_GOTCHAS } = require("./coding-patterns");
-const { SIGNALS, CATEGORIES, QUESTION_TYPES, STORIES, QUESTION_KEYWORDS, FRAMEWORKS, FRAMEWORK_KEYWORDS } = require("./behavioral-stories");
+const behavioralBase = require("./behavioral-stories");
+
+// ============ INTERVIEW PROFILE ============
+// Selects which story bank the behavioral copilot serves. "ebay" merges the
+// eBay-targeted stories in and retires the Mastercard-flavored duplicates so
+// the matcher never serves a wrong-company narrative live.
+// Override with INTERVIEW_PROFILE=base to get the original bank back.
+const INTERVIEW_PROFILE = process.env.INTERVIEW_PROFILE || "ebay";
+let { SIGNALS, CATEGORIES, QUESTION_TYPES, STORIES, QUESTION_KEYWORDS, FRAMEWORKS, FRAMEWORK_KEYWORDS } = behavioralBase;
+if (INTERVIEW_PROFILE === "ebay") {
+  const ebay = require("./ebay-stories");
+  const liveStories = ebay.EBAY_STORIES.filter(s => !s.draft);
+  // Retire all Mastercard-targeted content: the eBay-superseded stories, the
+  // Mastercard tech-screen cards (ts-*/tsp*), and the orphaned payments type.
+  const isMastercard = id => id.startsWith("ts-") || id.startsWith("tsp") || id === "screen-payments-domain";
+  const dropped = STORIES.filter(s => isMastercard(s.id) || ebay.EBAY_REPLACES.includes(s.id)).length;
+  STORIES = [...STORIES.filter(s => !isMastercard(s.id) && !ebay.EBAY_REPLACES.includes(s.id)), ...liveStories];
+  QUESTION_TYPES = Object.fromEntries(Object.entries({ ...QUESTION_TYPES, ...ebay.EBAY_QUESTION_TYPES }).filter(([k]) => !isMastercard(k)));
+  QUESTION_KEYWORDS = Object.fromEntries(Object.entries({ ...QUESTION_KEYWORDS, ...ebay.EBAY_QUESTION_KEYWORDS }).filter(([k]) => !isMastercard(k)));
+  CATEGORIES = Object.fromEntries(
+    Object.entries({ ...CATEGORIES, ...ebay.EBAY_CATEGORIES })
+      .filter(([k]) => !["tech-screen", "tech-screen-bridge", "tech-screen-pillars"].includes(k))
+      .map(([k, c]) => [k, { ...c, questionTypes: c.questionTypes.filter(qt => QUESTION_TYPES[qt]) }])
+  );
+  FRAMEWORKS = FRAMEWORKS.map(f => ebay.ID_ALIASES[f.storyLink] ? { ...f, storyLink: ebay.ID_ALIASES[f.storyLink] } : f);
+  console.log(`[PROFILE] ebay — ${liveStories.length} eBay stories in, ${dropped} Mastercard-era entries retired (${STORIES.length} total)`);
+}
+
+// ============ INTERVIEW DOMAIN FOCUS ============
+// Each interview has a focus (data vs infra). Scope the LIVE bank to that focus
+// so off-domain technical stories (e.g. infra stories during a data interview)
+// never surface. "general" (management/behavioral) and "screen" (narratives) are
+// universal — they apply to every interview. Override with INTERVIEW_DOMAIN=infra,
+// or =all to disable scoping.
+const INTERVIEW_DOMAIN = process.env.INTERVIEW_DOMAIN || (INTERVIEW_PROFILE === "ebay" ? "data" : "all");
+if (INTERVIEW_DOMAIN !== "all") {
+  const universal = new Set(["general", "screen"]);
+  const inFocus = s => (s.domains || []).some(d => d === INTERVIEW_DOMAIN || universal.has(d));
+  const before = STORIES.length;
+  const droppedStories = STORIES.filter(s => !inFocus(s)).map(s => s.id);
+  STORIES = STORIES.filter(inFocus);
+  // Drop question types / keywords / categories that no longer have a backing
+  // story so the classifier never offers a type it can't fulfil. Frameworks stay
+  // (philosophy answers); a dangling storyLink is handled gracefully downstream.
+  const liveTypes = new Set(STORIES.flatMap(s => s.questionTypes || []));
+  QUESTION_TYPES = Object.fromEntries(Object.entries(QUESTION_TYPES).filter(([k, q]) => liveTypes.has(k) || q.isFramework));
+  QUESTION_KEYWORDS = Object.fromEntries(Object.entries(QUESTION_KEYWORDS).filter(([k]) => QUESTION_TYPES[k]));
+  CATEGORIES = Object.fromEntries(
+    Object.entries(CATEGORIES)
+      .map(([k, c]) => [k, { ...c, questionTypes: c.questionTypes.filter(qt => QUESTION_TYPES[qt]) }])
+      .filter(([, c]) => c.questionTypes.length)
+  );
+  console.log(`[DOMAIN] ${INTERVIEW_DOMAIN} focus — ${STORIES.length}/${before} stories in focus; dropped off-domain: ${droppedStories.join(", ") || "none"}`);
+}
 
 const LOG_FILE = path.join(__dirname, "session.log");
 
@@ -191,7 +244,7 @@ function updateRequirements(reqUpdate) {
 function callClaude(messages, maxTokens) {
   return new Promise((resolve, reject) => {
     const payload = JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: maxTokens || 2000,
       messages,
     });
@@ -275,15 +328,37 @@ function callGemini(prompt, maxTokens) {
   });
 }
 
-function streamClaude(messages, maxTokens, res) {
-  res.writeHead(200, {
-    "Content-Type": "text/event-stream",
-    "Cache-Control": "no-cache",
-    Connection: "keep-alive",
-  });
+// Streams a Claude completion over SSE. Hardened: logs every failure, and on a
+// TRANSIENT error (HTTP 429/500/502/503/529 or a mid-stream overloaded/api_error)
+// auto-retries up to MAX_ATTEMPTS — but only while nothing has been streamed yet
+// (headers are written lazily on first token, so a retry is invisible to the client).
+function streamClaude(messages, maxTokens, res, attempt = 1) {
+  const MAX_ATTEMPTS = 3;
+  const RETRYABLE_HTTP = new Set([429, 500, 502, 503, 529]);
+  let headersSent = false;
+  let fullText = "";
+  let aborted = false; // this attempt was handed to a retry — ignore its remaining events
+
+  const ensureHeaders = () => {
+    if (!headersSent) {
+      res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });
+      headersSent = true;
+    }
+  };
+  const retry = (why) => {
+    aborted = true;
+    log("WARN", `streamClaude transient (attempt ${attempt}/${MAX_ATTEMPTS}): ${why} — retrying`);
+    setTimeout(() => streamClaude(messages, maxTokens, res, attempt + 1), 500 * attempt);
+  };
+  const fail = (msg) => {
+    ensureHeaders();
+    res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
+    res.write(`data: ${JSON.stringify({ done: true, fullText: "" })}\n\n`);
+    res.end();
+  };
 
   const payload = JSON.stringify({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: maxTokens || 800,
     stream: true,
     messages,
@@ -303,8 +378,21 @@ function streamClaude(messages, maxTokens, res) {
     },
     (apiRes) => {
       let buffer = "";
-      let fullText = "";
+      // Non-200 responses aren't SSE — capture the JSON error body so it can't fail silently.
+      if (apiRes.statusCode !== 200) {
+        let errBody = "";
+        apiRes.on("data", (c) => (errBody += c));
+        apiRes.on("end", () => {
+          let msg = `Claude API ${apiRes.statusCode}`;
+          try { msg = JSON.parse(errBody).error.message || msg; } catch (_) {}
+          log("ERROR", `streamClaude ${apiRes.statusCode}: ${msg}`);
+          if (attempt < MAX_ATTEMPTS && RETRYABLE_HTTP.has(apiRes.statusCode)) return retry(`HTTP ${apiRes.statusCode}`);
+          fail(msg);
+        });
+        return;
+      }
       apiRes.on("data", (chunk) => {
+        if (aborted) return;
         buffer += chunk.toString();
         const lines = buffer.split("\n");
         buffer = lines.pop();
@@ -315,27 +403,81 @@ function streamClaude(messages, maxTokens, res) {
           try {
             const evt = JSON.parse(data);
             if (evt.type === "content_block_delta" && evt.delta && evt.delta.text) {
+              ensureHeaders();
               fullText += evt.delta.text;
               res.write(`data: ${JSON.stringify({ text: evt.delta.text })}\n\n`);
             }
             if (evt.type === "error") {
-              res.write(`data: ${JSON.stringify({ error: evt.error.message })}\n\n`);
+              const em = (evt.error && evt.error.message) || "stream error";
+              const et = (evt.error && evt.error.type) || "";
+              log("ERROR", `streamClaude mid-stream ${et || "error"}: ${em}`);
+              const transient = /overloaded|api_error|internal server|50\d|529/i.test(`${et} ${em}`);
+              if (!fullText && attempt < MAX_ATTEMPTS && transient) return retry(`mid-stream ${et || em}`);
+              ensureHeaders();
+              res.write(`data: ${JSON.stringify({ error: em })}\n\n`);
             }
           } catch (_) {}
         }
       });
       apiRes.on("end", () => {
+        if (aborted) return;
+        ensureHeaders();
         res.write(`data: ${JSON.stringify({ done: true, fullText })}\n\n`);
         res.end();
       });
     }
   );
   apiReq.on("error", (e) => {
-    res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`);
+    if (aborted) return;
+    log("ERROR", `streamClaude network error: ${e.message}`);
+    if (!fullText && attempt < MAX_ATTEMPTS) return retry(`network ${e.message}`);
+    fail(e.message);
+  });
+  // Watchdog: if Anthropic stalls (socket open, no data) for 12s, self-heal — retry if nothing has
+  // streamed yet, otherwise close gracefully with the partial answer. Never hang the client.
+  apiReq.setTimeout(12000, () => {
+    if (aborted) return;
+    apiReq.destroy();
+    if (!fullText && attempt < MAX_ATTEMPTS) { log("WARN", `streamClaude idle stall — retrying (attempt ${attempt}/${MAX_ATTEMPTS})`); return retry("idle stall"); }
+    log("ERROR", `streamClaude idle stall — closing with ${fullText.length} chars`);
+    aborted = true;
+    ensureHeaders();
+    res.write(`data: ${JSON.stringify({ done: true, fullText })}\n\n`);
     res.end();
   });
   apiReq.write(payload);
   apiReq.end();
+}
+
+// Stream a pre-built answer over the same SSE contract the client expects — no LLM, instant.
+function streamStatic(text, res) {
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+  res.write(`data: ${JSON.stringify({ text })}\n\n`);
+  res.write(`data: ${JSON.stringify({ done: true, fullText: text })}\n\n`);
+  res.end();
+}
+
+// Resolve the primary banked story for a detected questionType.
+// Prefer the story for which this type is PRIMARY (first in its questionTypes), else any story listing it.
+function primaryStoryFor(questionType) {
+  if (!questionType) return null;
+  return STORIES.find(s => (s.questionTypes || [])[0] === questionType)
+      || STORIES.find(s => (s.questionTypes || []).includes(questionType))
+      || null;
+}
+
+// Keep the live answer body to just the story header — the short CARL bullets render in the
+// [STORY] refresher (buildCarlHtml on the client). This is a memory-jog card, not a script.
+function buildInstantAnswer(story) {
+  const angle = story.title.split("—")[0].replace(/\([^)]*\)/g, "").trim();
+  return [
+    `**${angle}**`,
+    `[STORY:${story.id}]`,
+  ].join("\n");
 }
 
 const HLD_TRANSITION_PATTERNS = /\b(high level design|start designing|draw.*(architecture|system|diagram)|let me (sketch|design|draw|start with the)|move on to (the )?(design|architecture)|now.*(design|architect))/i;
@@ -395,8 +537,14 @@ JSON only, no markdown:
   try {
     let text;
     if (GEMINI_KEY && GEMINI_KEY !== "your-gemini-key-here") {
-      text = await callGemini(fastPrompt, 200);
-      log("ANALYZE", "fast-classified via Gemini");
+      try {
+        text = await callGemini(fastPrompt, 200);
+        log("ANALYZE", "fast-classified via Gemini");
+      } catch (gErr) {
+        log("WARN", `Gemini classify failed (${gErr.message}) — falling back to Claude`);
+        text = await callClaude([{ role: "user", content: fastPrompt }], 200);
+        log("ANALYZE", "fast-classified via Claude (Gemini fallback)");
+      }
     } else {
       text = await callClaude([{ role: "user", content: fastPrompt }], 200);
     }
@@ -1203,8 +1351,14 @@ Return ONLY raw JSON. No markdown, no backticks, no explanation.`;
   try {
     let text;
     if (GEMINI_KEY && GEMINI_KEY !== "your-gemini-key-here") {
-      text = await callGemini(codingPrompt, 4000);
-      log("CODING_ANALYZE", "classified via Gemini");
+      try {
+        text = await callGemini(codingPrompt, 4000);
+        log("CODING_ANALYZE", "classified via Gemini");
+      } catch (gErr) {
+        log("WARN", `Gemini classify failed (${gErr.message}) — falling back to Claude`);
+        text = await callClaude([{ role: "user", content: codingPrompt }], 400);
+        log("CODING_ANALYZE", "classified via Claude (Gemini fallback)");
+      }
     } else {
       text = await callClaude([{ role: "user", content: codingPrompt }], 400);
     }
@@ -1478,6 +1632,12 @@ app.post("/api/log", (req, res) => {
 });
 
 // ============ BEHAVIORAL INTERVIEW ============
+// With a known interview profile, seed the target so answers tailor from the
+// first question instead of waiting for company detection in the transcript.
+const DEFAULT_INTERVIEW_CONTEXT = INTERVIEW_PROFILE === "ebay"
+  ? { company: "ebay", domain: "marketplace/e-commerce, data platforms (Cloud Data Technologies), experimentation/A-B testing, near-real-time AI/analytics" }
+  : null;
+
 let behavioralState = {
   lastQuestionType: "",
   questionsDetected: [],
@@ -1487,11 +1647,11 @@ let behavioralState = {
   recentQuestions: [],
   lastQuestionTime: 0,
   pendingSetup: null,
-  interviewContext: null,
+  interviewContext: DEFAULT_INTERVIEW_CONTEXT,
 };
 
 function resetBehavioralState() {
-  behavioralState = { lastQuestionType: "", questionsDetected: [], lastFrameworkType: "", frameworksDetected: [], consecutiveAnswering: 0, recentQuestions: [], lastQuestionTime: 0, pendingSetup: null, interviewContext: null };
+  behavioralState = { lastQuestionType: "", questionsDetected: [], lastFrameworkType: "", frameworksDetected: [], consecutiveAnswering: 0, recentQuestions: [], lastQuestionTime: 0, pendingSetup: null, interviewContext: DEFAULT_INTERVIEW_CONTEXT };
 }
 
 function isSimilarToRecent(question) {
@@ -1534,9 +1694,9 @@ app.get("/api/behavioral/data", (req, res) => {
 });
 
 app.post("/api/behavioral/analyze", async (req, res) => {
-  const { recentSpeech, fullContext, lastDetectedType } = req.body;
+  const { recentSpeech, fullContext, lastDetectedType, manual } = req.body;
   if (!recentSpeech) return res.status(400).json({ error: "No speech" });
-  log("BEHAVIORAL_ANALYZE", `input (${recentSpeech.split(/\s+/).length} words): "${recentSpeech.slice(0, 150)}..."`);
+  log("BEHAVIORAL_ANALYZE", `input (${recentSpeech.split(/\s+/).length} words)${manual ? " [MANUAL tap]" : ""}: "${recentSpeech.slice(0, 150)}..."`);
 
   if (!API_KEY || API_KEY === "sk-ant-your-key-here") {
     return res.json({ action: "none" });
@@ -1592,13 +1752,13 @@ IMPORTANT: If a question LOOKS personal but has a matching story type in the STO
 - "setup" — interviewer is building a hypothetical/scenario but hasn't asked the actual question yet
 - "not_a_question" — candidate is answering on a topic already detected, AND no new question or topic shift is present
 
-STEP 3 — ANSWER HINT: When a question is detected, include a short "answerHint" — one line telling the candidate what the interviewer really wants and how to structure the answer:
-- past_experience → e.g. "They want a specific story. Use CARL: Context → Action → Result → Lesson"
-- philosophy → e.g. "They want your mental model. Lead with your definition, then 2-3 pillars, then back with a real example"
-- concept → e.g. "They want you to define this. Start with a crisp definition, then connect to your real experience"
+STEP 3 — ANSWER HINT: When a question is detected, include an "answerHint" — MAX 8 WORDS, a glanceable nudge on what they really want:
+- past_experience → e.g. "Story: their gap, your coaching, the promotion"
+- philosophy → e.g. "Your mental model + one real example"
+- concept → e.g. "Crisp definition, then your experience"
 - personal → DO NOT generate an answerHint. This is the candidate's to handle.
-- probe → e.g. "They're digging deeper. Be specific — give metrics, names, concrete details"
-Make the hint SPECIFIC to the actual question asked, not generic.
+- probe → e.g. "Go deeper: metrics, names, specifics"
+Never explain CARL inside the hint — the answer card carries the structure. Make it specific to THIS question, never generic.
 
 STEP 4 — MATCH: Based on intent, find the best match:
 - past_experience → match to closest STORY type. If no good match, use unmatched_question.
@@ -1608,6 +1768,8 @@ STEP 4 — MATCH: Based on intent, find the best match:
 - probe → follow_up
 - setup → return {"action": "candidate_answering", "setup": true} — we'll watch the next chunk for the real question
 - not_a_question → candidate_answering or none
+
+STEP 5 — ALTERNATE READINGS (disambiguation): A single spoken phrase can legitimately mean different things that need DIFFERENT answers. When the detected question is genuinely ambiguous — it could map to a different intent, a different story, or a different framework that would change how the candidate should answer — include an "alternatives" array (max 2) listing the OTHER plausible readings. Each entry: {"action","questionType"(if it maps to a story/framework type),"question"(the reading-specific phrasing),"intent","label"(<=4 words naming the reading, e.g. "Hardest project", "0->1 build", "Your philosophy")}. Only include readings that genuinely need a different answer. If the question is unambiguous, omit "alternatives" or set it to []. Example: "tell me about a project you're proud of" -> primary {innovation, "0->1 build"} with an alternative {tough-project, "Hardest project"}.
 
 RECENT SPEECH:
 "${recentSpeech}"
@@ -1630,12 +1792,13 @@ RULES:
 - A weak match is worse than unmatched_question — only match when confident
 - If the same type was just detected (lastDetectedType), don't re-detect it
 - Candidate restating or elaborating = candidate_answering
+- PROJECT QUESTIONS — disambiguate by EMPHASIS, not just the words "hard/big": a question stressing that the candidate "built / drove / championed something FROM SCRATCH, by yourself, your own initiative, took it 0-to-1, started it and grew it into something used" → innovation. A question stressing the HARDEST / MOST COMPLEX / largest / company-wide project → tough-project. When both signals appear, prefer innovation if the emphasis is on personally driving a ground-up build.
 
-Respond with ONLY a JSON object (no markdown, no explanation):
-{"action": "question_detected", "questionType": "type-key", "question": "cleaned question", "intent": "past_experience", "answerHint": "how to approach this answer"}
+Respond with ONLY a JSON object (no markdown, no explanation). Add "alternatives" ONLY when the phrase is genuinely ambiguous (see STEP 5):
+{"action": "question_detected", "questionType": "type-key", "question": "cleaned question", "intent": "past_experience", "answerHint": "how to approach this answer", "alternatives": [{"action": "question_detected", "questionType": "other-type-key", "question": "the other reading", "intent": "past_experience", "label": "Hardest project"}]}
 {"action": "framework_detected", "questionType": "fw-type-key", "question": "cleaned question", "intent": "philosophy", "answerHint": "how to approach this answer"}
 {"action": "unmatched_question", "question": "cleaned question", "intent": "past_experience|philosophy|concept", "answerHint": "how to approach this answer"}
-{"action": "follow_up", "questionType": "current-type-key", "intent": "probe", "answerHint": "how to approach this answer"}
+{"action": "follow_up", "questionType": "current-type-key", "question": "the follow-up question being asked", "intent": "probe", "answerHint": "how to approach this answer"}
 {"action": "candidate_answering"}
 {"action": "candidate_answering", "setup": true}
 {"action": "none"}`;
@@ -1643,8 +1806,14 @@ Respond with ONLY a JSON object (no markdown, no explanation):
   try {
     let text;
     if (GEMINI_KEY && GEMINI_KEY !== "your-gemini-key-here") {
-      text = await callGemini(classifyPrompt, 4000);
-      log("BEHAVIORAL_ANALYZE", "classified via Gemini");
+      try {
+        text = await callGemini(classifyPrompt, 4000);
+        log("BEHAVIORAL_ANALYZE", "classified via Gemini");
+      } catch (gErr) {
+        log("WARN", `Gemini classify failed (${gErr.message}) — falling back to Claude`);
+        text = await callClaude([{ role: "user", content: classifyPrompt }], 300);
+        log("BEHAVIORAL_ANALYZE", "classified via Claude (Gemini fallback)");
+      }
     } else {
       text = await callClaude([{ role: "user", content: classifyPrompt }], 300);
     }
@@ -1711,7 +1880,7 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 
     // Validate: if model returns a type we don't have, promote to unmatched
     if (result.action === "question_detected" && result.questionType) {
-      if (result.questionType === lastDetectedType) {
+      if (!manual && result.questionType === lastDetectedType) {
         log("BEHAVIORAL_DEDUP", `suppressed — same as last: ${result.questionType}`);
         result.action = "none";
       } else if (!QUESTION_TYPES[result.questionType]) {
@@ -1723,7 +1892,7 @@ Respond with ONLY a JSON object (no markdown, no explanation):
     }
 
     if (result.action === "framework_detected" && result.questionType) {
-      if (result.questionType === lastDetectedType) {
+      if (!manual && result.questionType === lastDetectedType) {
         log("BEHAVIORAL_DEDUP", `framework suppressed — same as last: ${result.questionType}`);
         result.action = "none";
       } else if (!FRAMEWORKS.find(f => f.questionType === result.questionType)) {
@@ -1734,15 +1903,24 @@ Respond with ONLY a JSON object (no markdown, no explanation):
       }
     }
 
-    // Semantic dedup: suppress if similar to a recently detected question
-    if ((result.action === "unmatched_question" || result.action === "question_detected" || result.action === "framework_detected" || result.action === "follow_up") && result.question) {
+    // A follow_up without question text leaves the frontend unable to render a
+    // card (it gates on data.question) — synthesize one so the card always fires.
+    if (result.action === "follow_up" && !result.question) {
+      result.question = recentSpeech.slice(-200).trim();
+      log("BEHAVIORAL_ANALYZE", "follow_up missing question — synthesized from recent speech");
+    }
+
+    // Semantic dedup: suppress if similar to a recently detected question.
+    // Skipped for manual taps — an explicit Answer press is never spam.
+    if (!manual && (result.action === "unmatched_question" || result.action === "question_detected" || result.action === "framework_detected" || result.action === "follow_up") && result.question) {
       if (isSimilarToRecent(result.question)) {
         result.action = "none";
       }
     }
 
-    // Also cooldown: if a question was detected very recently (< 15s), suppress unless it's clearly a different topic
-    if ((result.action === "unmatched_question" || result.action === "follow_up") && result.question) {
+    // Also cooldown: if a question was detected very recently (< 15s), suppress unless it's clearly a different topic.
+    // Skipped for manual taps — the user is deliberately asking for an answer now.
+    if (!manual && (result.action === "unmatched_question" || result.action === "follow_up") && result.question) {
       const timeSinceLast = Date.now() - behavioralState.lastQuestionTime;
       if (timeSinceLast < 15000 && timeSinceLast > 0) {
         log("BEHAVIORAL_DEDUP", `cooldown — ${Math.round(timeSinceLast / 1000)}s since last question, suppressing`);
@@ -1804,9 +1982,30 @@ app.post("/api/behavioral/answer", async (req, res) => {
     return res.end();
   }
 
-  const storyBank = STORIES.map(s =>
-    `- "${s.title}" [${s.id}] (${s.domains.join(", ")}): ${s.card.c} → Actions: ${s.card.a.join("; ")} → Result: ${s.card.r} → Learning: ${s.card.l}`
+  try {
+  // PLAN A — instant banked-card serve. For a confident first-pass "tell me about a time" match,
+  // skip the LLM entirely and stream the candidate's pre-written CARL card. Follow-up probes still
+  // go to the LLM below (they want fresh depth, not the prepared card).
+  const matched = primaryStoryFor(matchedStoryKey);
+  if (intent === "past_experience" && matched && !isFollowUp) {
+    log("BEHAVIORAL_ANSWER", `[past_experience] INSTANT card: ${matched.id} (no LLM)`);
+    return streamStatic(buildInstantAnswer(matched), res);
+  }
+
+  // PLAN C — slim prompt. Send a one-line learning index of every story (so the model can still
+  // pick/reference any of them), plus the FULL CARL of just the matched story. ~12k tokens → ~1.5k.
+  const storyIndex = STORIES.map(s =>
+    `- "${s.title}" [${s.id}] (${(s.domains || []).join(", ")}): ${s.card.l}`
   ).join("\n");
+  const matchedFull = matched
+    ? `\n\nMOST RELEVANT STORY (full detail — prefer this if it fits):\n- "${matched.title}" [${matched.id}]: ${matched.card.c} → Actions: ${matched.card.a.join("; ")} → Result: ${matched.card.r} → Learning: ${matched.card.l}`
+    : "";
+  // Prepared, vetted deep-dive answers for the matched story — gold for probe follow-ups.
+  const matchedProbeMap = matched && (matched.probes || (matched.card && matched.card.probes));
+  const matchedProbes = matchedProbeMap && Object.keys(matchedProbeMap).length
+    ? `\n\nPREPARED DEEP-DIVE ANSWERS for "${matched.id}" (Sogo's own vetted answers — adapt the closest one when a probe matches; skip anything marked [VERIFY]):\n${Object.entries(matchedProbeMap).map(([q, a]) => `  • "${q}" → ${a}`).join("\n")}`
+    : "";
+  const storyBank = storyIndex + matchedFull + matchedProbes;
 
   const frameworkBank = FRAMEWORKS.map(f =>
     `- ${f.questionType}: "${f.definition}" — Pillars: ${f.pillars.join("; ")}${f.storyLink ? ` — Evidence story: ${f.storyLink}` : ""}`
@@ -1862,10 +2061,26 @@ YOUR JOB: Think like a human coach. Ask yourself:
 Generate a response the candidate can GLANCE AT in 2 seconds:
 
 **Frame:** One sentence — what the interviewer wants and the best angle.
-**Say:**
+**Open:** One short line to speak FIRST — the 10-second headline of the whole answer (hook + outcome).
+${intent === "past_experience"
+  ? `**Say (complete CARL — every letter present, in order; each BULLET is one short line the candidate builds on verbally):**
+- C: context bullet → (detail). Add a 2nd C bullet if situation + stakes need separating.
+- A: action bullet, what THEY did → (specific detail)
+- A: action bullet → (specific detail)
+- A: (optional 3rd action if the story needs it)
+- R: result bullet that MUST contain the headline metric/number from the story (e.g. "1,300+ apps", "92% fewer alerts", "6h → <1min"). A result bullet with no number is incomplete — if the story has a number, it goes here. Add a 2nd R bullet for a secondary outcome if it strengthens.
+- L: lesson/principle bullet → (ties back to the question)
+Use 1-2 bullets per letter (Actions 2-3). Never cram a whole stage into one fragment, and never merge two letters into one bullet.`
+  : intent === "probe"
+  ? `**Say (answer the probe DIRECTLY — focused and concrete, NOT a story arc; do NOT use C/A/R/L labels):**
+- Lead with the direct answer to exactly what was asked — a one-line definition, the specific mechanism, or the number.
+- Then 2-4 tight bullets of real substance: name the actual tech / design choice, the metric, the tradeoff. Prefer the PREPARED DEEP-DIVE ANSWERS above when one matches the question.
+- "How did you build/implement X?" → give the real architecture/stack. "What does X mean?" → define it in one line, then ground it in what you did.
+- They asked a narrow question — give a sharp, specific answer, not a full Context→Result narrative.`
+  : `**Say:**
 - Short bullet, 6-10 words → (why this lands)
 - Short bullet → (supporting detail)
-- Short bullet → (evidence or fact)
+- Short bullet → (evidence or fact)`}
 **Pivot →** Story name + angle (ONLY if a story from the bank genuinely fits)
 
 STORY TAG: At the very end of your response, on its own line, if the candidate should have a specific story from the bank ready as a CARL example to tell, output exactly:
@@ -1876,8 +2091,10 @@ If no story is needed (motivation questions, self-reflection, concept definition
 AVAILABLE STORY IDS: ${STORIES.map(s => s.id).join(", ")}
 
 Rules:
-- Under 80 words total (not counting the STORY tag)
-- Bullets are SHORT PHRASES — candidate expands verbally
+- Under 140 words total (not counting the STORY tag)
+- Each bullet is ONE short line the candidate can build on verbally — never a paragraph
+- A CARL letter may span 1-2 bullets (Actions 2-3) — don't force a stage into a single fragment, but keep every bullet to one line
+- For story answers: the CARL bullets must form ONE coherent story, not a grab-bag of points. Every letter present — a story without R and L is incomplete.
 - THINK INDEPENDENTLY. You are a smart coach, not a database query.
 - Use your real knowledge about companies, industries, technologies when relevant
 - Reference the story bank ONLY when a story genuinely fits the question
@@ -1886,6 +2103,16 @@ Rules:
 
   log("BEHAVIORAL_ANSWER", `[${intent || "?"}${isFollowUp ? ",follow-up" : ""}] streaming for: "${question.slice(0, 80)}..."`);
   streamClaude([{ role: "user", content: prompt }], 600, res);
+  } catch (err) {
+    // Never let a thrown error leave the client's "thinking..." spinner hanging forever.
+    log("ERROR", `behavioral answer threw: ${err.message}`);
+    if (!res.headersSent) {
+      res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });
+    }
+    res.write(`data: ${JSON.stringify({ error: "answer failed: " + err.message })}\n\n`);
+    res.write(`data: ${JSON.stringify({ done: true, fullText: "" })}\n\n`);
+    res.end();
+  }
 });
 
 // Legacy fallback endpoint — redirects to unified answer
@@ -2038,7 +2265,7 @@ wss.on("connection", (clientWs) => {
   }
 
   const dgUrl = "wss://api.deepgram.com/v1/listen?" + [
-    "model=nova-3",
+    "model=nova-3", // best English model; uses keyterm prompting (below), not the legacy keywords= param
     "language=en",
     "encoding=linear16",
     "sample_rate=16000",
@@ -2050,7 +2277,9 @@ wss.on("connection", (clientWs) => {
     "utterance_end_ms=3000",
     "vad_events=true",
     "endpointing=300",
-    "keywords=" + [
+    // keyterm prompting (nova-3): boosts recognition of these domain terms.
+    // Each entry becomes its own keyterm= param; the legacy :weight suffix is stripped.
+    ...[
       // Frameworks & acronyms — high misrecognition risk
       "STAR:1.5", "CARL:1.5", "SOAR:1.5",
       "OKRs:1.5", "KPIs:1.5", "SLAs:1.5", "DORA:1.5", "RACI:1.5",
@@ -2100,7 +2329,7 @@ wss.on("connection", (clientWs) => {
       "Big O:1.5", "time complexity:1.0",
       "recursion:1.0", "memoization:1.5",
       "topological sort:1.5", "heap:1.0", "trie:1.5",
-    ].join(","),
+    ].map(k => "keyterm=" + encodeURIComponent(k.replace(/:[0-9.]+$/, ""))),
   ].join("&");
 
   const dgWs = new WebSocket(dgUrl, {
