@@ -840,7 +840,7 @@ const STORIES = [
       "l": "At this level, my impact isn't what I build — it's the system I create for others to deliver at scale."
     },
     "probes": {
-      "how many direct reports": "Currently 20 in total — mix of direct reports and tech leads who manage sub-teams. In a prior role it was a team of 10.",
+      "how many direct reports": "Currently 20 in total — mix of direct reports and tech leads who manage sub-teams. At Mastercard it was a team of 10.",
       "do you manage managers": "I manage tech leads who function as player-coaches — they own domains and have people responsibilities without formal manager titles. I've also managed the transition of a tech lead into a full engineering manager role.",
       "how do you handle remote teams": "Global org across US, Europe, India. Written culture for decisions, async design reviews, time-zone-aware meeting cadences. Tech lead forums bridge the gaps."
     }
@@ -860,7 +860,7 @@ const STORIES = [
       "domain-expertise"
     ],
     "card": {
-      "c": "Spent three-plus years at Citi building SRE as a discipline from the ground up for a global cloud technology organization. Before that, ran infrastructure operations and on-call in an earlier role (Dublin).",
+      "c": "Spent three-plus years at Citi building SRE as a discipline from the ground up for a global cloud technology organization. Before that, ran infrastructure operations and on-call at Mastercard Dublin.",
       "a": [
         "Architected observability platform — OpenTelemetry, Prometheus, Grafana — custom alerting correlated across hundreds of services",
         "Built AIOps engine — ML-powered text analytics ingesting 100k+ incidents monthly for predictive analysis and hotspot identification",
@@ -2463,7 +2463,7 @@ const STORIES = [
       }
     },
     "probes": {
-      "how do you foster innovation": "Biweekly 'innovation spikes' — alternating Fridays, success measured by learning velocity, failed demos celebrated, framed to product leadership as strategic investment. One spike became a GraphQL prototype cutting redundant REST calls 50%+; grew into a formal API modernization initiative. (Inspiration: a prior employer's 'Take Initiative' week.) The win was cultural: the team moved from 'what's the easiest way' to 'what's the best way.'"
+      "how do you foster innovation": "Biweekly 'innovation spikes' — alternating Fridays, success measured by learning velocity, failed demos celebrated, framed to product leadership as strategic investment. One spike became a GraphQL prototype cutting redundant REST calls 50%+; grew into a formal API modernization initiative. (Inspiration: Mastercard's 'Take Initiative' week.) The win was cultural: the team moved from 'what's the easiest way' to 'what's the best way.'"
     },
     "domains": [
       "general"
@@ -2486,7 +2486,7 @@ const STORIES = [
       "a": [
         "Present: SVP / Engineering Group Manager at Citi, leading a 20-person global org (US, Europe, India) building data platforms and large-scale cloud modernization — systems processing high-volume event data across regions",
         "Hot stuff: DRIFT — 2B records/day from 300 sources, 6 hours → under a minute (Kafka/Flink/Iceberg); SCOUT — ML platform on that foundation, real-time inference in 110ms, recurring incidents down 40%",
-        "Past: [INSERT: one sentence on a prior role — e.g. 'EM in Dublin, 10 engineers, infra' or 'blockchain L2 rollups lead']",
+        "Past: [INSERT: your Mastercard framing — one sentence; e.g. 'EM in Dublin, 10 engineers, infra' or 'blockchain L2 rollups lead']",
         "Personal thread: I enjoy mentoring and growing people — moved to management because I'm motivated by the outcome, and the way to maximize it is being a force multiplier for a team",
         "Close on them: '[COMPANY/TEAM]'s mission — [their stated mission] — is what I've spent the last four years building. That's why I'm here.'"
       ],
@@ -2506,7 +2506,7 @@ const STORIES = [
         "r": [
           "**Under 90 seconds** — tight and confident",
           "Sets up **DRIFT** as the 'most impactful project' follow-up",
-          "[VERIFY: prior-role framing — one sentence]"
+          "[VERIFY: Mastercard framing — one sentence]"
         ],
         "l": [
           "**You have the floor — own it, don't shrink**",
@@ -2516,7 +2516,7 @@ const STORIES = [
       }
     },
     "probes": {
-      "why did you become a manager": "I'm technically grounded but motivated by the outcome of the work. I get real energy from helping people accomplish more together than they could alone — I realized acting as a force multiplier was how I'd influence outcomes most. Started as a tech-lead manager earlier in my career; as the teams delivered, scope kept growing, which confirmed the path.",
+      "why did you become a manager": "I'm technically grounded but motivated by the outcome of the work. I get real energy from helping people accomplish more together than they could alone — I realized acting as a force multiplier was how I'd influence outcomes most. Started as a tech-lead manager at Mastercard; as the teams delivered, scope kept growing, which confirmed the path.",
       "how hands-on are you": "Architecture, design reviews, problem framing — deep enough to lead an ARB debate or an ML design discussion. I don't take the keyboard from my engineers. [VERIFY: phrase to taste]"
     },
     "domains": [
