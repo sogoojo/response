@@ -1,21 +1,22 @@
-// Contact sheet — renders ALL eBay signal cards on one page exactly as the LIVE
+// Contact sheet — renders ALL signal cards on one page exactly as the LIVE
 // copilot shows them (same esc/mdBold/buildCarlHtml as public/behavioral.html),
-// grouped by category, with [VERIFY] flags highlighted so they're easy to spot.
+// grouped by domain section, with [VERIFY]/[INSERT] flags highlighted.
 //   Re-run:  node dev/build-all-cards.js   →   open dev/all-cards.html
 const fs = require("fs");
 const path = require("path");
-const { EBAY_STORIES } = require("./ebay-stories");
+const { STORIES } = require("./behavioral-stories");
 
 const esc = s => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-// bold + highlight [VERIFY...] markers
+// bold + highlight [VERIFY...]/[INSERT...] markers
 const mdBold = s => esc(String(s))
   .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#fff">$1</strong>')
-  .replace(/\[(VERIFY[^\]]*)\]/g, '<span style="color:#ff7b7b;font-weight:600">[$1]</span>');
+  .replace(/\[((?:VERIFY|INSERT)[^\]]*)\]/g, '<span style="color:#ff7b7b;font-weight:600">[$1]</span>');
 
 function buildCarlHtml(card, title) {
-  const sig = card.signals || {};
+  // Refined cards carry a `signals` recall layout; plain cards fall back to CARL.
+  const sig = card.signals || { c: [card.c], a: card.a || [], r: [card.r], l: [card.l] };
   const li = x => typeof x === "string" ? `<li style="margin-bottom:6px">${mdBold(x)}</li>` : `<li style="margin-bottom:6px">${mdBold(x.b)}<ul style="margin:4px 0 2px;padding-left:16px;list-style:circle">${(x.sub||[]).map(s => `<li style="margin-bottom:4px">${mdBold(s)}</li>`).join("")}</ul></li>`;
-  const ul = arr => `<ul style="margin:0;padding-left:18px">${arr.map(li).join("")}</ul>`;
+  const ul = arr => `<ul style="margin:0;padding-left:18px">${(arr||[]).filter(Boolean).map(li).join("")}</ul>`;
   const rows = [
     ["C", "#4fc3f7", sig.c || []],
     ["A", "#81c784", sig.a || []],
@@ -31,20 +32,23 @@ function buildCarlHtml(card, title) {
   </div>`;
 }
 
-const GROUPS = [
-  ["Technical project experience", "eb-tech-"],
-  ["Conflict / disagreement", "eb-conf-"],
-  ["Management & leadership", "eb-mgmt-"],
-  ["Narrative / framing", "eb-nar-"],
+// One section per domain — a story appears under every domain it carries (matches
+// the live prep tabs). Order mirrors the front-end tab order.
+const SECTIONS = [
+  ["Data", "data"],
+  ["Infrastructure", "infra"],
+  ["SRE", "sre"],
+  ["Management", "general"],
+  ["Narrative", "screen"],
 ];
 
-const sections = GROUPS.map(([name, prefix]) => {
-  const cards = EBAY_STORIES.filter(s => s.id.startsWith(prefix)).map(s => buildCarlHtml(s.card, s.title)).join("");
-  const n = EBAY_STORIES.filter(s => s.id.startsWith(prefix)).length;
-  return `<h2>${esc(name)} <span class="n">${n}</span></h2><div class="grid">${cards}</div>`;
+const sections = SECTIONS.map(([name, dom]) => {
+  const inDom = STORIES.filter(s => (s.domains || []).includes(dom));
+  const cards = inDom.map(s => buildCarlHtml(s.card, s.title)).join("");
+  return `<h2>${esc(name)} <span class="n">${inDom.length}</span></h2><div class="grid">${cards}</div>`;
 }).join("");
 
-const html = `<!doctype html><html><head><meta charset="utf-8"><title>eBay signal cards — all ${EBAY_STORIES.length}</title>
+const html = `<!doctype html><html><head><meta charset="utf-8"><title>Signal cards — all ${STORIES.length}</title>
 <style>
   body{background:#0a0a0f;color:#e8e6f0;font-family:-apple-system,system-ui,sans-serif;margin:0;padding:24px 28px 80px}
   h1{font-size:16px;color:#e6a23c;letter-spacing:1px;text-transform:uppercase;margin:0 0 4px}
@@ -57,11 +61,11 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>eBay signa
   .ct{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#e6a23c;margin-bottom:10px;font-weight:700;line-height:1.3}
   ul{list-style:disc}
 </style></head><body>
-  <h1>eBay signal cards — all ${EBAY_STORIES.length}</h1>
-  <p class="sub">Live-card render (3 cues per C/A/R/L). <b>Red [VERIFY]</b> = unconfirmed detail to fill before the interview.</p>
+  <h1>Signal cards — all ${STORIES.length}</h1>
+  <p class="sub">Live-card render (C/A/R/L cues), grouped by section. <b>Red [VERIFY]/[INSERT]</b> = detail to fill per interview.</p>
   ${sections}
 </body></html>`;
 
 const out = path.join(__dirname, "all-cards.html");
 fs.writeFileSync(out, html);
-console.log("Wrote", out, "—", EBAY_STORIES.length, "cards");
+console.log("Wrote", out, "—", STORIES.length, "cards across", SECTIONS.length, "sections");

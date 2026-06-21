@@ -10,39 +10,15 @@ const { DESIGN_REFERENCES, PATTERNS, KEY_TECHNOLOGIES, ADVANCED_TOPICS, DESIGN_P
 const { CODING_PATTERNS, COMPLEXITY_REFERENCE, COMMON_GOTCHAS } = require("./coding-patterns");
 const behavioralBase = require("./behavioral-stories");
 
-// ============ INTERVIEW PROFILE ============
-// Selects which story bank the behavioral copilot serves. "ebay" merges the
-// eBay-targeted stories in and retires the Mastercard-flavored duplicates so
-// the matcher never serves a wrong-company narrative live.
-// Override with INTERVIEW_PROFILE=base to get the original bank back.
-const INTERVIEW_PROFILE = process.env.INTERVIEW_PROFILE || "ebay";
 let { SIGNALS, CATEGORIES, QUESTION_TYPES, STORIES, QUESTION_KEYWORDS, FRAMEWORKS, FRAMEWORK_KEYWORDS } = behavioralBase;
-if (INTERVIEW_PROFILE === "ebay") {
-  const ebay = require("./ebay-stories");
-  const liveStories = ebay.EBAY_STORIES.filter(s => !s.draft);
-  // Retire all Mastercard-targeted content: the eBay-superseded stories, the
-  // Mastercard tech-screen cards (ts-*/tsp*), and the orphaned payments type.
-  const isMastercard = id => id.startsWith("ts-") || id.startsWith("tsp") || id === "screen-payments-domain";
-  const dropped = STORIES.filter(s => isMastercard(s.id) || ebay.EBAY_REPLACES.includes(s.id)).length;
-  STORIES = [...STORIES.filter(s => !isMastercard(s.id) && !ebay.EBAY_REPLACES.includes(s.id)), ...liveStories];
-  QUESTION_TYPES = Object.fromEntries(Object.entries({ ...QUESTION_TYPES, ...ebay.EBAY_QUESTION_TYPES }).filter(([k]) => !isMastercard(k)));
-  QUESTION_KEYWORDS = Object.fromEntries(Object.entries({ ...QUESTION_KEYWORDS, ...ebay.EBAY_QUESTION_KEYWORDS }).filter(([k]) => !isMastercard(k)));
-  CATEGORIES = Object.fromEntries(
-    Object.entries({ ...CATEGORIES, ...ebay.EBAY_CATEGORIES })
-      .filter(([k]) => !["tech-screen", "tech-screen-bridge", "tech-screen-pillars"].includes(k))
-      .map(([k, c]) => [k, { ...c, questionTypes: c.questionTypes.filter(qt => QUESTION_TYPES[qt]) }])
-  );
-  FRAMEWORKS = FRAMEWORKS.map(f => ebay.ID_ALIASES[f.storyLink] ? { ...f, storyLink: ebay.ID_ALIASES[f.storyLink] } : f);
-  console.log(`[PROFILE] ebay — ${liveStories.length} eBay stories in, ${dropped} Mastercard-era entries retired (${STORIES.length} total)`);
-}
 
 // ============ INTERVIEW DOMAIN FOCUS ============
-// Each interview has a focus (data vs infra). Scope the LIVE bank to that focus
-// so off-domain technical stories (e.g. infra stories during a data interview)
-// never surface. "general" (management/behavioral) and "screen" (narratives) are
-// universal — they apply to every interview. Override with INTERVIEW_DOMAIN=infra,
-// or =all to disable scoping.
-const INTERVIEW_DOMAIN = process.env.INTERVIEW_DOMAIN || (INTERVIEW_PROFILE === "ebay" ? "data" : "all");
+// Each interview has a focus (data / infra / sre). Scope the LIVE bank to that
+// focus so off-domain technical stories never surface. "general" (management)
+// and "screen" (narrative) are universal — they apply to every interview.
+// Default "all": the neutral bank shows everything. A per-interview branch sets
+// INTERVIEW_DOMAIN=data|infra|sre to narrow the live matcher.
+const INTERVIEW_DOMAIN = process.env.INTERVIEW_DOMAIN || "all";
 if (INTERVIEW_DOMAIN !== "all") {
   const universal = new Set(["general", "screen"]);
   const inFocus = s => (s.domains || []).some(d => d === INTERVIEW_DOMAIN || universal.has(d));
@@ -1632,11 +1608,10 @@ app.post("/api/log", (req, res) => {
 });
 
 // ============ BEHAVIORAL INTERVIEW ============
-// With a known interview profile, seed the target so answers tailor from the
-// first question instead of waiting for company detection in the transcript.
-const DEFAULT_INTERVIEW_CONTEXT = INTERVIEW_PROFILE === "ebay"
-  ? { company: "ebay", domain: "marketplace/e-commerce, data platforms (Cloud Data Technologies), experimentation/A-B testing, near-real-time AI/analytics" }
-  : null;
+// Neutral main: no company seeded — the target is detected from the transcript.
+// A per-interview branch can set DEFAULT_INTERVIEW_CONTEXT to seed tailoring from
+// the first question (e.g. { company, domain }).
+const DEFAULT_INTERVIEW_CONTEXT = null;
 
 let behavioralState = {
   lastQuestionType: "",

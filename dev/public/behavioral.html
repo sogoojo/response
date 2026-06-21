@@ -508,7 +508,7 @@
     let allFrameworks = [];
     let frameworkKeywords = {};
 
-    let selectedDomain = "infra";
+    let selectedDomain = "all";
     let assignments = {};  // { questionType: storyId }
     let frameworkAssignments = {};  // { frameworkQuestionType: storyId }
     let prepMode = "stories";  // "stories" or "frameworks"
@@ -566,7 +566,7 @@
             try { frameworkAssignments = JSON.parse(savedFw); } catch (_) {}
         }
         const savedDomain = localStorage.getItem("behavioral-domain");
-        const validDomains = ["infra", "data", "payments", "all"];
+        const validDomains = ["data", "infra", "sre", "general", "screen", "all"];
         if (savedDomain && validDomains.includes(savedDomain)) selectedDomain = savedDomain;
 
         try {
@@ -592,16 +592,18 @@
     // ===== PREP MODE =====
     function renderDomainTabs() {
         const domains = [
-            { key: "infra", label: "Infrastructure" },
             { key: "data", label: "Data" },
-            { key: "payments", label: "General" },
+            { key: "infra", label: "Infrastructure" },
+            { key: "sre", label: "SRE" },
+            { key: "general", label: "Management" },
+            { key: "screen", label: "Narrative" },
             { key: "all", label: "All" },
         ];
         const $tabs = document.getElementById("domainTabs");
         $tabs.innerHTML = domains.map(d => {
             const count = d.key === "all"
                 ? allStories.length
-                : allStories.filter(s => s.domains.includes(d.key) || s.domains.includes("general")).length;
+                : allStories.filter(s => s.domains.includes(d.key)).length;
             return `<div class="domain-tab ${d.key === selectedDomain ? 'active' : ''}"
                          onclick="selectDomain('${d.key}')">
                 ${d.label}<span class="count">(${count})</span>
@@ -618,7 +620,7 @@
 
     function getStoriesForDomain(domain) {
         if (domain === "all") return allStories;
-        return allStories.filter(s => s.domains.includes(domain) || s.domains.includes("general"));
+        return allStories.filter(s => s.domains.includes(domain));
     }
 
     function selectPrepMode(mode) {
@@ -778,7 +780,7 @@
     function startInterview() {
         document.getElementById("prepView").classList.remove("active");
         document.getElementById("liveView").classList.add("active");
-        const domainLabel = {infra:"Infrastructure",data:"Data",payments:"General",all:"All Domains"};
+        const domainLabel = {data:"Data",infra:"Infrastructure",sre:"SRE",general:"Management",screen:"Narrative",all:"All Domains"};
         document.getElementById("liveDomain").textContent = domainLabel[selectedDomain] || selectedDomain;
 
         fetch("/api/behavioral/reset", { method: "POST" }).catch(() => {});
@@ -1094,43 +1096,43 @@
     // ===== SHOW STORY CARD =====
     // ===== UNIFIED INTELLIGENT CARD =====
     // ===== STORY OVERRIDE DRAWER (manual pick mid-interview) =====
-    // Your core bank from the eBay question map. Edit this list to change what shows.
+    // Your core anchor stories — the quick-access grid in the live view. Edit to change what shows.
     const CORE_STORIES = [
         // TECH
-        { grp: "TECH",      id: "eb-tech-drift",           name: "DRIFT",      hook: "source of truth" },
-        { grp: "TECH",      id: "eb-tech-scout",           name: "SCOUT",      hook: "ML ops-intel" },
-        { grp: "TECH",      id: "eb-tech-impact",          name: "FinOps",     hook: "$12.5M savings" },
-        { grp: "TECH",      id: "eb-tech-breakdown",       name: "TIBCO",      hook: "migration method" },
-        { grp: "TECH",      id: "eb-tech-experimentation", name: "Experiment", hook: "canary / A-B" },
-        { grp: "TECH",      id: "eb-tech-neo4j",           name: "Neo4j",      hook: "wrong call" },
-        { grp: "TECH",      id: "eb-tech-ambiguity",       name: "App-Deps",   hook: "blast radius" },
-        { grp: "TECH",      id: "eb-tech-platform-design", name: "Platform",   hook: "90-day plan" },
+        { grp: "TECH",      id: "tech-drift",           name: "DRIFT",      hook: "source of truth" },
+        { grp: "TECH",      id: "tech-scout",           name: "SCOUT",      hook: "ML ops-intel" },
+        { grp: "TECH",      id: "tech-impact",          name: "FinOps",     hook: "$12.5M savings" },
+        { grp: "TECH",      id: "tech-breakdown",       name: "TIBCO",      hook: "migration method" },
+        { grp: "TECH",      id: "tech-experimentation", name: "Experiment", hook: "canary / A-B" },
+        { grp: "TECH",      id: "tech-neo4j",           name: "Neo4j",      hook: "wrong call" },
+        { grp: "TECH",      id: "tech-ambiguity",       name: "App-Deps",   hook: "blast radius" },
+        { grp: "TECH",      id: "tech-platform-design", name: "Platform",   hook: "90-day plan" },
         // CONFLICT
-        { grp: "CONFLICT",  id: "eb-conf-pod4",            name: "Pod4",       hook: "competing impl" },
-        { grp: "CONFLICT",  id: "eb-conf-greg",            name: "Greg",       hook: "gatekeeper" },
-        { grp: "CONFLICT",  id: "eb-conf-sbom",            name: "SBOM",       hook: "CISO cross-org" },
-        { grp: "CONFLICT",  id: "eb-conf-kafka-solace",    name: "Kafka",      hook: "audit trust" },
-        { grp: "CONFLICT",  id: "eb-conf-supervisor",      name: "Manager",    hook: "disagree-commit" },
+        { grp: "CONFLICT",  id: "conf-pod4",            name: "Pod4",       hook: "competing impl" },
+        { grp: "CONFLICT",  id: "conf-greg",            name: "Greg",       hook: "gatekeeper" },
+        { grp: "CONFLICT",  id: "conf-sbom",            name: "SBOM",       hook: "CISO cross-org" },
+        { grp: "CONFLICT",  id: "conf-kafka-solace",    name: "Kafka",      hook: "audit trust" },
+        { grp: "CONFLICT",  id: "conf-supervisor",      name: "Manager",    hook: "disagree-commit" },
         // PRIORITIES
-        { grp: "PRIORITIES",id: "eb-mgmt-backlog",         name: "Priorities", hook: "urgent mid-migration" },
-        { grp: "PRIORITIES",id: "eb-mgmt-backlog-health",  name: "Backlog",    hook: "+40% search" },
+        { grp: "PRIORITIES",id: "mgmt-backlog",         name: "Priorities", hook: "urgent mid-migration" },
+        { grp: "PRIORITIES",id: "mgmt-backlog-health",  name: "Backlog",    hook: "+40% search" },
         // PEOPLE
-        { grp: "PEOPLE",    id: "eb-mgmt-engineer-dev",    name: "Eng-Dev",    hook: "to senior" },
-        { grp: "PEOPLE",    id: "eb-mgmt-underperformer",  name: "Coach-Up",   hook: "underperformer" },
-        { grp: "PEOPLE",    id: "eb-mgmt-feedback",        name: "Feedback",   hook: "hard convo" },
-        { grp: "PEOPLE",    id: "eb-mgmt-hiring",          name: "Hiring",     hook: "structured loop" },
-        { grp: "PEOPLE",    id: "eb-mgmt-trust",           name: "Trust",      hook: "burned-out team" },
-        { grp: "PEOPLE",    id: "eb-mgmt-scaling",         name: "Scaling",    hook: "tech-lead model" },
-        { grp: "PEOPLE",    id: "eb-mgmt-org-design",      name: "Org",        hook: "3 value streams" },
-        { grp: "PEOPLE",    id: "eb-mgmt-velocity",        name: "Velocity",   hook: "inherited chaos" },
-        { grp: "PEOPLE",    id: "eb-mgmt-inclusive",       name: "Inclusive",  hook: "quieter voices" },
+        { grp: "PEOPLE",    id: "mgmt-engineer-dev",    name: "Eng-Dev",    hook: "to senior" },
+        { grp: "PEOPLE",    id: "mgmt-underperformer",  name: "Coach-Up",   hook: "underperformer" },
+        { grp: "PEOPLE",    id: "mgmt-feedback",        name: "Feedback",   hook: "hard convo" },
+        { grp: "PEOPLE",    id: "mgmt-hiring",          name: "Hiring",     hook: "structured loop" },
+        { grp: "PEOPLE",    id: "mgmt-trust",           name: "Trust",      hook: "burned-out team" },
+        { grp: "PEOPLE",    id: "mgmt-scaling",         name: "Scaling",    hook: "tech-lead model" },
+        { grp: "PEOPLE",    id: "mgmt-org-design",      name: "Org",        hook: "3 value streams" },
+        { grp: "PEOPLE",    id: "mgmt-velocity",        name: "Velocity",   hook: "inherited chaos" },
+        { grp: "PEOPLE",    id: "mgmt-inclusive",       name: "Inclusive",  hook: "quieter voices" },
         // NARRATIVE
-        { grp: "NARRATIVE", id: "eb-nar-pitch",            name: "Pitch",      hook: "elevator" },
-        { grp: "NARRATIVE", id: "eb-nar-why-ebay",         name: "Why-eBay",   hook: "two things" },
-        { grp: "NARRATIVE", id: "eb-nar-why-leave",        name: "Why-Leave",  hook: "foundation done" },
-        { grp: "NARRATIVE", id: "eb-nar-questions",        name: "Questions",  hook: "ask him" },
-        { grp: "TECH",      id: "eb-mgmt-ktlo",            name: "KTLO",       hook: "30% reliability budget" },
-        { grp: "PEOPLE",    id: "eb-mgmt-playbook",        name: "Mgr Playbook", hook: "hire→onboard→strategy→exec" },
+        { grp: "NARRATIVE", id: "nar-pitch",            name: "Pitch",      hook: "elevator" },
+        { grp: "NARRATIVE", id: "nar-why-company",       name: "Why-Company", hook: "two things" },
+        { grp: "NARRATIVE", id: "nar-why-leave",        name: "Why-Leave",  hook: "foundation done" },
+        { grp: "NARRATIVE", id: "nar-questions",        name: "Questions",  hook: "ask interviewer" },
+        { grp: "TECH",      id: "mgmt-ktlo",            name: "KTLO",       hook: "30% reliability budget" },
+        { grp: "PEOPLE",    id: "mgmt-playbook",        name: "Mgr Playbook", hook: "hire→onboard→strategy→exec" },
     ];
     // Drawer hotkeys: digits 1-9 first, then unused letters (skips the coach keys h/m/l/s/a).
     const STORY_HOTKEYS = "123456789bcdefgijknopqrtuvwxyz".split("");
@@ -1179,7 +1181,7 @@
     function carlClean(text) {
         let t = String(text).replace(/\[(?:VERIFY|INSERT)[^\]]*\]/gi, "").trim();
         t = t.replace(/^For ['"][^'"]*['"][.\s]*/i, "");                     // "For 'a time you...'."
-        t = t.replace(/^(?:eBay's own question|From the eBay list)[^.?]*[.?]['"]?\s*/i, "");
+        t = t.replace(/^(?:A common interview question|A common prompt)[^.?]*[.?]['"]?\s*/i, "");
         t = t.replace(/^\d+-second headline\s*:\s*['"]?/i, "");              // "20-second headline:"
         t = t.replace(/^Lead(?:\s+\w+){0,2}\s+story\s*[—–-]\s*/i, "");       // "Lead failure story —"
         t = t.replace(/^['"\s]*(?:Frame|Lead|Situation|The version here)\s*:\s*/i, ""); // framing label
